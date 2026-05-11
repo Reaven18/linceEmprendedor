@@ -20,7 +20,7 @@ class CheckRole
         }
 
         $userRoles = $request->user()
-            ->rol
+            ->roles
             ->pluck('nombre')
             ->map(fn ($r) => strtolower($r))
             ->toArray();
