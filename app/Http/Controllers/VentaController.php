@@ -1,0 +1,425 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\Venta;
+use App\Models\VentaDetalle;
+use App\Models\Producto;
+use App\Models\Transaccion;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+
+/**
+ * @group Ventas
+ *
+ * Endpoints para administración de ventas.
+ */
+class VentaController extends Controller
+{
+    /**
+     * Obtener ventas del usuario autenticado
+     */
+    public function index()
+    {
+        $ventas = Venta::with([
+            'cliente',
+            'detalles.producto.imagenes',
+            'transacciones.metodoPago'
+        ])
+        ->where('id_cliente', Auth::id())
+        ->orderBy('fecha', 'desc')
+        ->get();
+
+        return $this->sendResponse(
+            $ventas,
+            'Ventas obtenidas correctamente.'
+        );
+    }
+
+    /**
+     * Obtener venta por ID
+     */
+    public function show($id)
+    {
+        $venta = Venta::with([
+            'cliente',
+            'detalles.producto.imagenes',
+            'transacciones.metodoPago'
+        ])->find($id);
+
+        if (!$venta) {
+
+            return $this->sendError(
+                'Venta no encontrada.',
+                ['error' => 'No existe una venta con ese ID.'],
+                404
+            );
+        }
+
+        // Validar acceso
+        if (
+            $venta->id_cliente !== Auth::id()
+            && !Auth::user()->roles->contains('nombre', 'admin')
+        ) {
+
+            return $this->sendError(
+                'Acceso denegado.',
+                ['error' => 'No puedes ver esta venta.'],
+                403
+            );
+        }
+
+        return $this->sendResponse(
+            $venta,
+            'Venta obtenida correctamente.'
+        );
+    }
+
+    /**
+     * Crear venta
+     *
+     * Tipos:
+     * - reservada
+     * - pagada
+     */
+    public function store(Request $request)
+    {
+        $request->validate([
+
+            'lugar' => 'nullable|string|max:100',
+            'latitud' => 'nullable|numeric',
+            'longitud' => 'nullable|numeric',
+
+            'tipo' => 'required|in:reservada,pagada',
+
+            'productos' => 'required|array|min:1',
+
+            'productos.*.id_producto' => 'required|exists:productos,id',
+            'productos.*.cantidad' => 'required|integer|min:1',
+
+            // Solo requerido si paga al momento
+            'id_metodo_de_pago' => 'required_if:tipo,pagada|exists:metodo_pago,id',
+        ]);
+
+        DB::beginTransaction();
+
+        try {
+
+            // Crear venta
+            $venta = Venta::create([
+                'id_cliente' => Auth::id(),
+                'lugar' => $request->lugar,
+                'latitud' => $request->latitud,
+                'longitud' => $request->longitud,
+
+                // Si paga al momento => confirmada
+                // Si reserva => pendiente
+                'status' => $request->tipo === 'pagada'
+                    ? 'confirmada'
+                    : 'pendiente',
+
+                'fecha' => now(),
+            ]);
+
+            $total = 0;
+
+            foreach ($request->productos as $item) {
+
+                $producto = Producto::find($item['id_producto']);
+
+                if (!$producto) {
+
+                    DB::rollBack();
+
+                    return $this->sendError(
+                        'Producto no encontrado.',
+                        ['error' => 'Uno de los productos no existe.'],
+                        404
+                    );
+                }
+
+                // Validar disponibilidad
+                if ($producto->status !== 'disponible') {
+
+                    DB::rollBack();
+
+                    return $this->sendError(
+                        'Producto no disponible.',
+                        [
+                            'error' => 'El producto "' .
+                                $producto->nombre .
+                                '" no está disponible.'
+                        ],
+                        409
+                    );
+                }
+
+                // Validar stock
+                if ($producto->stock < $item['cantidad']) {
+
+                    DB::rollBack();
+
+                    return $this->sendError(
+                        'Stock insuficiente.',
+                        [
+                            'error' => 'El producto "' .
+                                $producto->nombre .
+                                '" no tiene suficiente stock.'
+                        ],
+                        409
+                    );
+                }
+
+                $subtotal = $producto->precio * $item['cantidad'];
+
+                // Crear detalle
+                VentaDetalle::create([
+                    'cantidad' => $item['cantidad'],
+                    'precio_unitario' => $producto->precio,
+                    'id_venta' => $venta->id,
+                    'id_producto' => $producto->id,
+                ]);
+
+                $total += $subtotal;
+            }
+
+            // Si paga al momento, crear transacción
+            if ($request->tipo === 'pagada') {
+
+                Transaccion::create([
+                    'id_venta' => $venta->id,
+                    'consecutivo' => 1,
+                    'total' => $total,
+                    'fecha' => now(),
+                    'id_metodo_de_pago' => $request->id_metodo_de_pago,
+                ]);
+            }
+
+            DB::commit();
+
+            $venta->load([
+                'cliente',
+                'detalles.producto.imagenes',
+                'transacciones.metodoPago'
+            ]);
+
+            return $this->sendResponse(
+                $venta,
+                'Venta creada correctamente.',
+                201
+            );
+
+        } catch (\Exception $e) {
+
+            DB::rollBack();
+
+            return $this->sendError(
+                'Error al crear la venta.',
+                [
+                    'error' => $e->getMessage()
+                ],
+                500
+            );
+        }
+    }
+
+    /**
+     * Pagar una venta reservada
+     */
+    public function pagar(Request $request, $id)
+    {
+        $venta = Venta::with('detalles')->find($id);
+
+        if (!$venta) {
+
+            return $this->sendError(
+                'Venta no encontrada.',
+                ['error' => 'No existe una venta con ese ID.'],
+                404
+            );
+        }
+
+        // Validar propietario
+        if ($venta->id_cliente !== Auth::id()) {
+
+            return $this->sendError(
+                'Acceso denegado.',
+                ['error' => 'No puedes pagar esta venta.'],
+                403
+            );
+        }
+
+        // Validar estado
+        if ($venta->status !== 'pendiente') {
+
+            return $this->sendError(
+                'Venta inválida.',
+                ['error' => 'Solo las ventas pendientes pueden pagarse.'],
+                409
+            );
+        }
+
+        $request->validate([
+            'id_metodo_de_pago' => 'required|exists:metodo_pago,id',
+        ]);
+
+        DB::beginTransaction();
+
+        try {
+
+            $total = 0;
+
+            foreach ($venta->detalles as $detalle) {
+
+                $total += (
+                    $detalle->cantidad *
+                    $detalle->precio_unitario
+                );
+            }
+
+            // Crear transacción
+            Transaccion::create([
+                'id_venta' => $venta->id,
+                'consecutivo' => 1,
+                'total' => $total,
+                'fecha' => now(),
+                'id_metodo_de_pago' => $request->id_metodo_de_pago,
+            ]);
+
+            // Actualizar estado
+            $venta->update([
+                'status' => 'confirmada'
+            ]);
+
+            DB::commit();
+
+            $venta->load([
+                'cliente',
+                'detalles.producto',
+                'transacciones.metodoPago'
+            ]);
+
+            return $this->sendResponse(
+                $venta,
+                'Venta pagada correctamente.'
+            );
+
+        } catch (\Exception $e) {
+
+            DB::rollBack();
+
+            return $this->sendError(
+                'Error al procesar el pago.',
+                [
+                    'error' => $e->getMessage()
+                ],
+                500
+            );
+        }
+    }
+
+    /**
+     * Cancelar venta
+     */
+    public function cancelar($id)
+    {
+        $venta = Venta::find($id);
+
+        if (!$venta) {
+
+            return $this->sendError(
+                'Venta no encontrada.',
+                ['error' => 'No existe una venta con ese ID.'],
+                404
+            );
+        }
+
+        // Validar acceso
+        if (
+            $venta->id_cliente !== Auth::id()
+            && !Auth::user()->roles->contains('nombre', 'admin')
+        ) {
+
+            return $this->sendError(
+                'Acceso denegado.',
+                ['error' => 'No puedes cancelar esta venta.'],
+                403
+            );
+        }
+
+        // Validar estado
+        if ($venta->status === 'cancelada') {
+
+            return $this->sendError(
+                'Venta ya cancelada.',
+                ['error' => 'La venta ya fue cancelada.'],
+                409
+            );
+        }
+
+        if ($venta->status === 'completada') {
+
+            return $this->sendError(
+                'No se puede cancelar.',
+                ['error' => 'La venta ya fue completada.'],
+                409
+            );
+        }
+
+        $venta->update([
+            'status' => 'cancelada'
+        ]);
+
+        return $this->sendResponse(
+            $venta,
+            'Venta cancelada correctamente.'
+        );
+    }
+
+    /**
+     * Completar venta
+     */
+    public function completar($id)
+    {
+        $venta = Venta::find($id);
+
+        if (!$venta) {
+
+            return $this->sendError(
+                'Venta no encontrada.',
+                ['error' => 'No existe una venta con ese ID.'],
+                404
+            );
+        }
+
+        // Solo admin
+        if (!Auth::user()->roles->contains('nombre', 'admin')) {
+
+            return $this->sendError(
+                'Acceso denegado.',
+                ['error' => 'No tienes permisos para completar ventas.'],
+                403
+            );
+        }
+
+        // Validar estado
+        if ($venta->status !== 'confirmada') {
+
+            return $this->sendError(
+                'Estado inválido.',
+                ['error' => 'Solo ventas confirmadas pueden completarse.'],
+                409
+            );
+        }
+
+        $venta->update([
+            'status' => 'completada'
+        ]);
+
+        return $this->sendResponse(
+            $venta,
+            'Venta completada correctamente.'
+        );
+    }
+}
