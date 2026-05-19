@@ -130,7 +130,6 @@ class ReviewProductoController extends Controller
         $review = ReviewProductos::find($id);
 
         if (!$review) {
-
             return $this->sendError(
                 'Review no encontrada.',
                 ['error' => 'No existe una review con ese ID.'],
@@ -143,7 +142,6 @@ class ReviewProductoController extends Controller
             $review->id_cliente !== Auth::id()
             && !Auth::user()->roles->contains('nombre', 'admin')
         ) {
-
             return $this->sendError(
                 'Acceso denegado.',
                 ['error' => 'No puedes modificar esta review.'],

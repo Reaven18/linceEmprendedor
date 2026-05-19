@@ -16,12 +16,10 @@ class Transaccion extends Model
         'id_venta',
         'consecutivo',
         'total',
-        'fecha',
         'id_metodo_de_pago'
     ];
     protected $casts = [
         'total' => 'decimal:2',
-        'fecha' => 'datetime',
     ];
 
     public function metodoPago()

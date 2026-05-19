@@ -94,6 +94,8 @@ class ProductoController extends Controller
             'status' => 'required|in:disponible,agotado,pausado',
             'categorias' => 'nullable|array',
             'categorias.*' => 'exists:categorias,id',
+            'imagenes' => 'nullable|array',
+            'imagenes.*' => 'url',
         ]);
 
         $producto = Producto::create([
@@ -110,10 +112,20 @@ class ProductoController extends Controller
         if ($request->has('categorias')) {
             $producto->categorias()->attach($request->categorias);
         }
-
+        if ($request->has('imagenes'))
+            {
+                foreach ($request->imagenes as $index => $url) {
+                    $producto->imagenes()->create([
+                        'id_producto' => $producto->id,
+                        'url_imagen' => $url,
+                        'orden' => $index + 1
+                    ]);
+                }
+            }
         $producto->load([
             'vendedor',
-            'categorias'
+            'categorias',
+            'imagenes'
         ]);
 
         return $this->sendResponse(
@@ -161,6 +173,8 @@ class ProductoController extends Controller
             'status' => 'sometimes|in:disponible,agotado,pausado',
             'categorias' => 'sometimes|array',
             'categorias.*' => 'exists:categorias,id',
+            'imagenes' => 'sometimes|array',
+            'imagenes.*' => 'url',
         ]);
 
         $producto->update($request->only([
@@ -175,6 +189,18 @@ class ProductoController extends Controller
         // Actualizar categorías
         if ($request->has('categorias')) {
             $producto->categorias()->sync($request->categorias);
+        }
+
+        // Actualizar imágenes
+        if ($request->has('imagenes')) {
+            $producto->imagenes()->delete();
+            foreach ($request->imagenes as $index => $url) {
+                $producto->imagenes()->create([
+                    'id_producto' => $producto->id,
+                    'url_imagen' => $url,
+                    'orden' => $index + 1
+                ]);
+            }
         }
 
         $producto->load([

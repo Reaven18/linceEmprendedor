@@ -1,16 +1,26 @@
-# OpenAPI 3.0 - Marketplace API
-
+# OpenAPI Base — API Lince Emprendedor
 openapi: 3.0.3
+
 info:
-  title: Marketplace API
+  title: API Lince Emprendedor
+  description: API del sistema desarrollada en Laravel
   version: 1.0.0
-  description: API para marketplace universitario desarrollado con Laravel + Sanctum.
 
 servers:
   - url: http://localhost:8000/api
     description: Servidor local
 
+tags:
+  - name: Auth
+    description: Autenticación de usuarios
+
+  - name: Categorias
+    description: Gestión de categorías
+  - name: Productos
+    description: Gestión de productos
+
 components:
+
   securitySchemes:
     bearerAuth:
       type: http
@@ -19,74 +29,1027 @@ components:
 
   schemas:
 
-    User:
+    Rol:
       type: object
+
       properties:
+
         id:
           type: integer
+          example: 3
+
         nombre:
           type: string
+          example: Admin
+
+    Usuario:
+      type: object
+
+      properties:
+
+        id:
+          type: integer
+          example: 1
+
+        nombre:
+          type: string
+          example: Administrador del Sistema
+
         correo:
           type: string
+          format: email
+          example: admin@test.com
+
         telefono:
           type: string
+          example: "1234567890"
+
         carrera:
           type: string
+          example: N/A
 
-    Categoria:
-      type: object
-      properties:
-        id:
-          type: integer
-        nombre:
+        latitud:
+          type: number
+          nullable: true
+          example: 20.5234
+
+        longitud:
+          type: number
+          nullable: true
+          example: -100.8123
+
+        negocio_activo:
+          type: boolean
+          example: false
+
+        baneado:
+          type: boolean
+          example: false
+
+        created_at:
           type: string
+          format: date-time
+
+        updated_at:
+          type: string
+          format: date-time
+
+        roles:
+          type: array
+
+          items:
+            $ref: '#/components/schemas/Rol'
 
     Producto:
       type: object
+
       properties:
+
         id:
           type: integer
+          example: 1
+
+        id_vendedor:
+          type: integer
+          example: 2
+
         nombre:
           type: string
+          example: Galletas Principe
+
         descripcion:
           type: string
+          example: Paquete con 12 galletas sabor chocolate.
+
         precio:
-          type: number
-          format: float
+          type: string
+          example: "25.00"
+
         stock:
           type: integer
-        status:
-          type: string
+          example: 25
+
         es_perecedero:
           type: boolean
+          example: true
 
-    Venta:
-      type: object
-      properties:
-        id:
-          type: integer
-        id_cliente:
-          type: integer
-        lugar:
-          type: string
         status:
           type: string
+          example: disponible
+
+        created_at:
+          type: string
+          format: date-time
+
+        updated_at:
+          type: string
+          format: date-time
+
+        vendedor:
+          $ref: '#/components/schemas/Usuario'
+
+        categorias:
+          type: array
+
+          items:
+            $ref: '#/components/schemas/Categoria'
+
+        imagenes:
+          type: array
+
+          items:
+            $ref: '#/components/schemas/ImagenProducto'
+    ImagenProducto:
+      type: object
+
+      properties:
+
+        id:
+          type: integer
+          example: 1
+
+        id_producto:
+          type: integer
+          example: 3
+
+        url_imagen:
+          type: string
+          example: https://site.com/1.jpg
+
+        orden:
+          type: integer
+          example: 1
+
+        created_at:
+          type: string
+          format: date-time
+
+        updated_at:
+          type: string
+          format: date-time
+    MetodoPago:
+      type: object
+
+      properties:
+
+        id:
+          type: integer
+          example: 2
+
+        metodo:
+          type: string
+          example: Efectivo
+    Venta:
+      type: object
+
+      properties:
+
+        id:
+          type: integer
+          example: 9
+
+        id_cliente:
+          type: integer
+          example: 2
+
+        lugar:
+          type: string
+          example: UTICS
+
+        latitud:
+          type: number
+          nullable: true
+          example: null
+
+        longitud:
+          type: number
+          nullable: true
+          example: null
+
+        status:
+          type: string
+          enum:
+            - pendiente
+            - confirmada
+            - cancelada
+            - entregada
+          example: confirmada
+
         fecha:
           type: string
           format: date-time
 
-    Review:
+        created_at:
+          type: string
+          format: date-time
+
+        updated_at:
+          type: string
+          format: date-time
+
+        cliente:
+          $ref: '#/components/schemas/Usuario'
+
+        detalles:
+          type: array
+
+          items:
+            $ref: '#/components/schemas/DetalleVenta'
+
+        transaccion:
+          nullable: true
+          allOf:
+            - $ref: '#/components/schemas/Transaccion'
+    DetalleVenta:
       type: object
+
       properties:
+
         id:
           type: integer
+
+        cantidad:
+          type: integer
+
+        precio_unitario:
+          type: string
+          example: "10.00"
+
+        id_venta:
+          type: integer
+
+        id_producto:
+          type: integer
+
+        producto:
+          $ref: '#/components/schemas/Producto'
+    Transaccion:
+      type: object
+
+      properties:
+
+        id:
+          type: integer
+
+        id_venta:
+          type: integer
+
+        consecutivo:
+          type: integer
+
+        total:
+          type: string
+          example: "10.00"
+
+        id_metodo_de_pago:
+          type: integer
+
+        metodo_pago:
+          $ref: '#/components/schemas/MetodoPago'
+
+        created_at:
+          type: string
+          format: date-time
+
+        updated_at:
+          type: string
+          format: date-time
+#Auth Schemas
+    LoginRequest:
+      type: object
+
+      required:
+        - correo
+        - password
+
+      properties:
+
+        correo:
+          type: string
+          format: email
+          example: admin@test.com
+
+        password:
+          type: string
+          format: password
+          example: admin123
+
+    RegisterRequest:
+      type: object
+
+      required:
+        - nombre
+        - correo
+        - password
+        - password_confirmation
+        - telefono
+        - carrera
+        - id_rol
+
+      properties:
+
+        nombre:
+          type: string
+          example: Emilio Ruiz
+
+        correo:
+          type: string
+          format: email
+          example: 22030128@itcelaya.edu.mx
+
+        password:
+          type: string
+          format: password
+          example: 12345678
+
+        password_confirmation:
+          type: string
+          format: password
+          example: 12345678
+
+        telefono:
+          type: string
+          example: "4614103540"
+
+        carrera:
+          type: string
+          example: Ingeniería en Sistemas Computacionales
+
+        id_rol:
+          type: integer
+          example: 2
+    LoginSuccessResponse:
+      type: object
+
+      properties:
+
+        success:
+          type: boolean
+          example: true
+
+        data:
+          type: object
+
+          properties:
+
+            token:
+              type: string
+              example: 6|HUVaMm3bOYWpK9iumZmh5xO83KqG2vm8sYqwYD6W34e2488d
+
+            user:
+              $ref: '#/components/schemas/Usuario'
+
+        message:
+          type: string
+          example: Usuario autenticado con éxito.
+
+    RegisterSuccessResponse:
+      type: object
+
+      properties:
+
+        success:
+          type: boolean
+          example: true
+
+        data:
+          $ref: '#/components/schemas/Usuario'
+
+        message:
+          type: string
+          example: Usuario registrado correctamente.
+    MeResponse:
+      type: object
+
+      properties:
+
+        success:
+          type: boolean
+          example: true
+
+        data:
+          $ref: '#/components/schemas/Usuario'
+
+        message:
+          type: string
+          example: Datos del usuario autenticado.
+    LogoutResponse:
+      type: object
+
+      properties:
+
+        success:
+          type: boolean
+          example: true
+
+        data:
+          type: array
+          example: []
+
+        message:
+          type: string
+          example: Sesión cerrada correctamente.
+#Categorias Schemas
+    Categoria:
+      type: object
+
+      properties:
+
+        id:
+          type: integer
+          example: 2
+
+        nombre:
+          type: string
+          example: Bebidas
+
+    CategoriaDetalle:
+      type: object
+
+      properties:
+
+        id:
+          type: integer
+          example: 2
+
+        nombre:
+          type: string
+          example: Bebidas
+
+        productos:
+          type: array
+
+          items:
+            $ref: '#/components/schemas/Producto'
+    CategoriasResponse:
+      type: object
+
+      properties:
+
+        success:
+          type: boolean
+          example: true
+
+        data:
+          type: array
+
+          items:
+            $ref: '#/components/schemas/Categoria'
+
+        message:
+          type: string
+          example: Categorías obtenidas correctamente.
+
+    CategoriaDetalleResponse:
+      type: object
+
+      properties:
+
+        success:
+          type: boolean
+          example: true
+
+        data:
+          $ref: '#/components/schemas/CategoriaDetalle'
+
+        message:
+          type: string
+          example: Categoría obtenida correctamente.
+    CategoriaRequest:
+      type: object
+
+      required:
+        - nombre
+
+      properties:
+
+        nombre:
+          type: string
+          example: Dulces
+    CategoriaResponse:
+      type: object
+
+      properties:
+
+        success:
+          type: boolean
+          example: true
+
+        data:
+          $ref: '#/components/schemas/Categoria'
+
+        message:
+          type: string
+          example: Categoría creada correctamente.
+#Productos Schemas
+    ProductoRequest:
+      type: object
+
+      required:
+        - nombre
+        - descripcion
+        - precio
+        - stock
+        - es_perecedero
+        - status
+        - categorias
+
+      properties:
+
+        nombre:
+          type: string
+          example: Galletas Principe
+
+        descripcion:
+          type: string
+          example: Paquete con 12 galletas sabor chocolate.
+
+        precio:
+          type: number
+          format: float
+          example: 25.0
+
+        stock:
+          type: integer
+          example: 25
+
+        es_perecedero:
+          type: boolean
+          example: true
+
+        status:
+          type: string
+          example: disponible
+
+        categorias:
+          type: object
+
+          properties:
+
+            id:
+              type: integer
+              example: 4
+        imagenes:
+          type: array
+
+          items:
+            type: string
+            format: uri
+
+          example:
+            - https://site.com/1.jpg
+            - https://site.com/2.jpg
+    ProductoResponse:
+      type: object
+
+      properties:
+
+        success:
+          type: boolean
+          example: true
+
+        data:
+          $ref: '#/components/schemas/Producto'
+
+        message:
+          type: string
+          example: Producto creado correctamente.
+#Metodos de pago Schemas
+    MetodoPagoRequest:
+      type: object
+
+      required:
+        - metodo
+
+      properties:
+
+        metodo:
+          type: string
+          example: Efectivo
+    MetodosPagoResponse:
+      type: object
+
+      properties:
+
+        success:
+          type: boolean
+          example: true
+
+        data:
+          type: array
+
+          items:
+            $ref: '#/components/schemas/MetodoPago'
+
+        message:
+          type: string
+          example: Métodos de pago obtenidos correctamente.
+
+    ErrorResponse:
+      type: object
+
+      properties:
+
+        success:
+          type: boolean
+          example: false
+
+        message:
+          type: string
+          example: Credenciales incorrectas.
+
+        error:
+          type: string
+          example: Correo o contraseña inválidos.
+#Reseña de productos Schemas
+    ReviewProductoRequest:
+      type: object
+
+      required:
+        - id_producto
+        - calificacion
+        - comentario
+
+      properties:
+
+        id_producto:
+          type: integer
+          example: 3
+
         calificacion:
           type: integer
+          example: 4
+
+        comentario:
+          type: string
+          example: Esta en buen estado, solo que tardó más de lo esperado
+
+        anonimo:
+          type: boolean
+          example: false
+    ReviewProducto:
+      type: object
+
+      properties:
+
+        id:
+          type: integer
+          example: 1
+
+        id_cliente:
+          type: integer
+          example: 2
+
+        id_producto:
+          type: integer
+          example: 3
+
+        calificacion:
+          type: integer
+          example: 4
+
         comentario:
           type: string
 
-security:
-  - bearerAuth: []
+        estado:
+          type: string
+          example: activa
+
+        anonimo:
+          type: boolean
+          example: false
+
+        created_at:
+          type: string
+          format: date-time
+
+        updated_at:
+          type: string
+          format: date-time
+
+        cliente:
+          $ref: '#/components/schemas/ClienteSimple'
+
+        producto:
+          $ref: '#/components/schemas/ProductoSimple'
+    ReviewProductoResponse:
+      type: object
+
+      properties:
+
+        success:
+          type: boolean
+          example: true
+
+        data:
+          $ref: array
+          items:
+            $ref: '#/components/schemas/ReviewProducto'
+
+        message:
+          type: string
+          example: Review creada correctamente.
+    MisReviewsProductoResponse:
+      type: object
+
+      properties:
+
+        success:
+          type: boolean
+          example: true
+
+        data:
+          type: array
+
+          items:
+            $ref: '#/components/schemas/ReviewProducto'
+
+        message:
+          type: string
+          example: Reviews del usuario obtenidas correctamente.
+
+    ClienteSimple:
+      type: object
+
+      properties:
+
+        id:
+          type: integer
+          example: 2
+
+        nombre:
+          type: string
+          example: Emilio Ruiz
+
+        correo:
+          type: string
+          example: 22030128@itcelaya.edu.mx
+    ProductoSimple:
+      type: object
+
+      properties:
+
+        id:
+          type: integer
+          example: 3
+
+        nombre:
+          type: string
+          example: Galletas Emperador
+
+        descripcion:
+          type: string
+# Ventas Schemas
+    VentaRequest:
+      type: object
+
+      required:
+        - lugar
+        - tipo
+        - productos
+
+      properties:
+
+        lugar:
+          type: string
+          example: UTICS
+
+        tipo:
+          type: string
+          example: reservada
+
+        productos:
+          type: array
+
+          items:
+            type: object
+
+            required:
+              - id_producto
+              - cantidad
+
+            properties:
+
+              id_producto:
+                type: integer
+                example: 3
+
+              cantidad:
+                type: integer
+                example: 1
+    VentaResponse:
+      type: object
+
+      properties:
+
+        success:
+          type: boolean
+          example: true
+
+        data:
+          type: object
+
+          properties:
+
+            id:
+              type: integer
+
+            id_cliente:
+              type: integer
+
+            lugar:
+              type: string
+
+            latitud:
+              type: number
+              nullable: true
+
+            longitud:
+              type: number
+              nullable: true
+
+            status:
+              type: string
+              example: pendiente
+
+            fecha:
+              type: string
+              format: date-time
+
+            cliente:
+              $ref: '#/components/schemas/UsuarioSimple'
+
+            detalles:
+              type: array
+
+              items:
+                type: object
+
+                properties:
+
+                  cantidad:
+                    type: integer
+
+                  precio_unitario:
+                    type: string
+
+                  producto:
+                    $ref: '#/components/schemas/Producto'
+
+            transaccion:
+              nullable: true
+              type: object
+
+        message:
+          type: string
+          example: Venta creada correctamente.
+    ProductoNoDisponibleResponse:
+      type: object
+
+      properties:
+
+        success:
+          type: boolean
+          example: false
+
+        message:
+          type: string
+          example: Producto no disponible.
+
+        errors:
+          type: object
+
+          properties:
+
+            error:
+              type: string
+              example: El producto "X" no está disponible.
+    StockInsuficienteResponse:
+      type: object
+
+      properties:
+
+        success:
+          type: boolean
+          example: false
+
+        message:
+          type: string
+          example: Stock insuficiente.
+
+        errors:
+          type: object
+
+          properties:
+
+            error:
+              type: string
+              example: El producto "X" no tiene suficiente stock.
+    FiltroVentaRequest:
+      type: object
+
+      properties:
+
+        status:
+          type: string
+          nullable: true
+
+          enum:
+            - confirmada
+            - pagado
+            - pendiente
+
+          example: confirmada
+
+        lugar:
+          type: string
+          nullable: true
+          example: UTICS
+
+        fecha:
+          type: string
+          format: date
+          nullable: true
+          example: 2026-05-19
+    ValidationErrorResponse:
+      type: object
+
+      properties:
+
+        message:
+          type: string
+          example: The correo has already been taken.
+
+        errors:
+          type: object
+
+          properties:
+
+            correo:
+              type: array
+
+              items:
+                type: string
+
+              example:
+                - The correo has already been taken.
+
+            password:
+              type: array
+
+              items:
+                type: string
+
+              example:
+                - The password field confirmation does not match.
+
+    UnauthorizedResponse:
+      type: object
+
+      properties:
+
+        success:
+          type: boolean
+          example: false
+
+        message:
+          type: string
+          example: No autenticado.
+
+    ForbiddenResponse:
+      type: object
+
+      properties:
+
+        success:
+          type: boolean
+          example: false
+
+        message:
+          type: string
+          example: No autorizado para realizar esta acción.
+
+    NotFoundResponse:
+      type: object
+
+      properties:
+
+        success:
+          type: boolean
+          example: false
+
+        message:
+          type: string
+          example: Categoría no encontrada.
+
+        errors:
+          type: object
+
+          properties:
+
+            error:
+              type: string
+              example: No existe una categoría con ese ID.
 
 paths:
 
@@ -94,372 +1057,1595 @@ paths:
     post:
       tags:
         - Auth
+
       summary: Iniciar sesión
+
+      description: Endpoint para autenticar usuarios en el sistema.
+
       requestBody:
         required: true
+
         content:
           application/json:
             schema:
-              type: object
-              required:
-                - correo
-                - password
-              properties:
-                correo:
-                  type: string
-                password:
-                  type: string
+              $ref: '#/components/schemas/LoginRequest'
+
       responses:
+
         '200':
-          description: Login exitoso
+          description: Usuario autenticado correctamente
+
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginSuccessResponse'
+
+        '401':
+          description: Credenciales incorrectas
+
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+        '403':
+          description: Usuario baneado
+
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
   /register:
     post:
       tags:
         - Auth
+
       summary: Registrar usuario
+
+      description: Endpoint para registrar nuevos usuarios en el sistema.
+
       requestBody:
         required: true
+
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                nombre:
-                  type: string
-                correo:
-                  type: string
-                password:
-                  type: string
-                password_confirmation:
-                  type: string
-                telefono:
-                  type: string
-                carrera:
-                  type: string
-                id_rol:
-                  type: integer
+              $ref: '#/components/schemas/RegisterRequest'
+
       responses:
+
         '201':
-          description: Usuario registrado
+          description: Usuario registrado correctamente
+
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RegisterSuccessResponse'
+
+        '422':
+          description: Error de validación
+
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationErrorResponse'
 
   /me:
     get:
       tags:
         - Auth
+
       summary: Obtener usuario autenticado
+
+      description: Regresa los datos del usuario actual autenticado.
+
       security:
         - bearerAuth: []
-      responses:
-        '200':
-          description: Usuario autenticado
 
+      responses:
+
+        '200':
+          description: Datos del usuario autenticado
+
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MeResponse'
+
+        '401':
+          description: No autenticado
+
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedResponse'
   /logout:
     post:
       tags:
         - Auth
+
       summary: Cerrar sesión
+
+      description: Cierra la sesión actual del usuario autenticado.
+
       security:
         - bearerAuth: []
+
       responses:
+
         '200':
-          description: Logout exitoso
+          description: Sesión cerrada correctamente
+
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LogoutResponse'
+
+        '401':
+          description: No autenticado
+
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedResponse'
 
   /categorias:
     get:
       tags:
         - Categorias
-      summary: Obtener categorías
-      responses:
-        '200':
-          description: Lista de categorías
 
-    post:
-      tags:
-        - Categorias
-      summary: Crear categoría
-      security:
-        - bearerAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/Categoria'
+      summary: Obtener categorías
+
+      description: Lista todas las categorías registradas en el sistema.
+
       responses:
-        '201':
-          description: Categoría creada
+
+        '200':
+          description: Categorías obtenidas correctamente
+
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CategoriasResponse'
 
   /categorias/{id}:
     get:
       tags:
         - Categorias
-      summary: Obtener categoría
+
+      summary: Obtener categoría por ID
+
+      description: Obtiene una categoría específica junto con sus productos.
+
       parameters:
-        - in: path
-          name: id
+        - name: id
+          in: path
           required: true
+
           schema:
             type: integer
-      responses:
-        '200':
-          description: Categoría encontrada
 
+          example: 2
+
+      responses:
+
+        '200':
+          description: Categoría obtenida correctamente
+
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CategoriaDetalleResponse'
+
+        '404':
+          description: Categoría no encontrada
+
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundResponse'
+  /categorias:
+    post:
+      tags:
+        - Categorias
+
+      summary: Crear categoría
+
+      description: Crea una nueva categoría en el sistema. Requiere rol Admin.
+
+      security:
+        - bearerAuth: []
+
+      requestBody:
+        required: true
+
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CategoriaRequest'
+
+      responses:
+
+        '201':
+          description: Categoría creada correctamente
+
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CategoriaResponse'
+
+        '401':
+          description: No autenticado
+
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedResponse'
+
+        '403':
+          description: No autorizado
+
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenResponse'
+  /categorias/{id}:
     put:
       tags:
         - Categorias
+
       summary: Actualizar categoría
+
+      description: Actualiza los datos de una categoría específica. Requiere rol Admin.
+
       security:
         - bearerAuth: []
+
       parameters:
-        - in: path
-          name: id
+        - name: id
+          in: path
           required: true
+
           schema:
             type: integer
-      responses:
-        '200':
-          description: Categoría actualizada
 
+          example: 3
+
+      requestBody:
+        required: true
+
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CategoriaRequest'
+
+      responses:
+
+        '200':
+          description: Categoría actualizada correctamente
+
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CategoriaResponse'
+
+        '401':
+          description: No autenticado
+
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedResponse'
+
+        '403':
+          description: No autorizado
+
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenResponse'
+
+        '404':
+          description: Categoría no encontrada
+
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundResponse'
+  /categorias/{id}:
     delete:
       tags:
         - Categorias
+
       summary: Eliminar categoría
+
+      description: Elimina una categoría específica. Requiere rol Admin.
+
       security:
         - bearerAuth: []
+
       parameters:
-        - in: path
-          name: id
+        - name: id
+          in: path
           required: true
+
           schema:
             type: integer
-      responses:
-        '200':
-          description: Categoría eliminada
 
+          example: 3
+
+      responses:
+
+        '200':
+          description: Categoría eliminada correctamente
+
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/EmptySuccessResponse'
+                  - type: object
+                    properties:
+                      message:
+                        example: Categoría eliminada correctamente.
+
+        '401':
+          description: No autenticado
+
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedResponse'
+
+        '403':
+          description: No autorizado
+
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenResponse'
+
+        '404':
+          description: Categoría no encontrada
+
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundResponse'
   /productos:
     get:
       tags:
         - Productos
-      summary: Obtener productos
-      responses:
-        '200':
-          description: Lista de productos
 
+      summary: Obtener productos
+
+      description: Obtiene la lista de productos registrados en el sistema.
+
+      responses:
+
+        '200':
+          description: Productos obtenidos correctamente
+
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductosResponse'
+  /productos:
     post:
       tags:
         - Productos
+
       summary: Crear producto
+
+      description: Registra un nuevo producto. Requiere rol Vendedor.
+
       security:
         - bearerAuth: []
+
       requestBody:
         required: true
+
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Producto'
+              $ref: '#/components/schemas/ProductoRequest'
+
       responses:
+
         '201':
-          description: Producto creado
+          description: Producto creado correctamente
 
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductoResponse'
+
+        '401':
+          description: No autenticado
+
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedResponse'
+
+        '403':
+          description: No autorizado
+
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenResponse'
+
+        '422':
+          description: Error de validación
+
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationErrorResponse'
   /productos/{id}:
-    get:
-      tags:
-        - Productos
-      summary: Obtener producto
-      parameters:
-        - in: path
-          name: id
-          required: true
-          schema:
-            type: integer
-      responses:
-        '200':
-          description: Producto encontrado
-
-    put:
-      tags:
-        - Productos
-      summary: Actualizar producto
-      security:
-        - bearerAuth: []
-      parameters:
-        - in: path
-          name: id
-          required: true
-          schema:
-            type: integer
-      responses:
-        '200':
-          description: Producto actualizado
-
     delete:
       tags:
         - Productos
+
       summary: Eliminar producto
+
+      description: Elimina un producto específico. Requiere rol Vendedor.
+
       security:
         - bearerAuth: []
+
       parameters:
-        - in: path
-          name: id
+        - name: id
+          in: path
           required: true
+
           schema:
             type: integer
-      responses:
-        '200':
-          description: Producto eliminado
 
-  /ventas:
-    get:
+          example: 1
+
+      responses:
+
+        '200':
+          description: Producto eliminado correctamente
+
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/EmptySuccessResponse'
+                  - type: object
+                    properties:
+                      message:
+                        example: Producto eliminado correctamente.
+
+        '401':
+          description: No autenticado
+
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedResponse'
+
+        '403':
+          description: No autorizado
+
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenResponse'
+
+        '404':
+          description: Producto no encontrado
+
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundResponse'
+  /productos/{id}:
+    put:
       tags:
-        - Ventas
-      summary: Obtener ventas
+        - Productos
+
+      summary: Actualizar producto
+
+      description: Actualiza los datos de un producto específico. Requiere rol Vendedor.
+
       security:
         - bearerAuth: []
-      responses:
-        '200':
-          description: Lista de ventas
 
-    post:
-      tags:
-        - Ventas
-      summary: Crear venta
-      security:
-        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+
+          schema:
+            type: integer
+
+          example: 3
+
       requestBody:
         required: true
+
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                tipo:
-                  type: string
-                  enum:
-                    - reservada
-                    - pagada
-                lugar:
-                  type: string
-                productos:
-                  type: array
-                  items:
-                    type: object
-                    properties:
-                      id_producto:
-                        type: integer
-                      cantidad:
-                        type: integer
-      responses:
-        '201':
-          description: Venta creada
+              $ref: '#/components/schemas/ProductoRequest'
 
+      responses:
+
+        '200':
+          description: Producto actualizado correctamente
+
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ProductoResponse'
+                  - type: object
+                    properties:
+                      message:
+                        example: Producto actualizado correctamente.
+
+        '401':
+          description: No autenticado
+
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedResponse'
+
+        '403':
+          description: No autorizado
+
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenResponse'
+
+        '404':
+          description: Producto no encontrado
+
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundResponse'
+
+        '422':
+          description: Error de validación
+
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationErrorResponse'}
+  /mis-productos:
+    get:
+      tags:
+        - Productos
+
+      summary: Obtener productos del vendedor
+
+      description: Devuelve la lista de productos pertenecientes al vendedor autenticado.
+
+      security:
+        - bearerAuth: []
+
+      responses:
+
+        '200':
+          description: Productos del usuario obtenidos correctamente
+
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ProductosResponse'
+                  - type: object
+                    properties:
+                      message:
+                        example: Productos del usuario obtenidos correctamente.
+
+        '401':
+          description: No autenticado
+
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedResponse'
+
+        '403':
+          description: No autorizado
+
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenResponse'
+  /metodos-pago:
+    get:
+      tags:
+        - Métodos de Pago
+
+      summary: Obtener métodos de pago
+
+      description: Obtiene todos los métodos de pago disponibles.
+
+      responses:
+
+        '200':
+          description: Métodos de pago obtenidos correctamente
+
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MetodosPagoResponse'
+  /metodos-pago/{id}:
+    get:
+      tags:
+        - Métodos de Pago
+
+      summary: Obtener método de pago
+
+      description: Obtiene un método de pago específico.
+
+      parameters:
+        - name: id
+          in: path
+          required: true
+
+          schema:
+            type: integer
+
+          example: 1
+
+      responses:
+
+        '200':
+          description: Método de pago obtenido correctamente
+
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/MetodoPagoResponse'
+                  - type: object
+                    properties:
+                      message:
+                        example: Método de pago obtenido correctamente.
+
+        '404':
+          description: Método de pago no encontrado
+
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundResponse'
+  /metodos-pago:
+    post:
+      tags:
+        - Métodos de Pago
+
+      summary: Crear método de pago
+
+      description: Crea un nuevo método de pago. Requiere rol Admin.
+
+      security:
+        - bearerAuth: []
+
+      requestBody:
+        required: true
+
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MetodoPagoRequest'
+
+      responses:
+
+        '201':
+          description: Método de pago creado correctamente
+
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MetodoPagoResponse'
+
+        '401':
+          description: No autenticado
+
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedResponse'
+
+        '403':
+          description: No autorizado
+
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenResponse'
+
+        '422':
+          description: Error de validación
+
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationErrorResponse'
+  /metodos-pago/{id}:
+    put:
+      tags:
+        - Métodos de Pago
+
+      summary: Actualizar método de pago
+
+      description: Actualiza un método de pago específico. Requiere rol Admin.
+
+      security:
+        - bearerAuth: []
+
+      parameters:
+        - name: id
+          in: path
+          required: true
+
+          schema:
+            type: integer
+
+          example: 1
+
+      requestBody:
+        required: true
+
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MetodoPagoRequest'
+
+      responses:
+
+        '200':
+          description: Método de pago actualizado correctamente
+
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/MetodoPagoResponse'
+                  - type: object
+                    properties:
+                      message:
+                        example: Método de pago actualizado correctamente.
+
+        '401':
+          description: No autenticado
+
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedResponse'
+
+        '403':
+          description: No autorizado
+
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenResponse'
+
+        '404':
+          description: Método de pago no encontrado
+
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundResponse'
+
+        '422':
+          description: Error de validación
+
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationErrorResponse'
+  /metodos-pago/{id}:
+    delete:
+      tags:
+        - Métodos de Pago
+
+      summary: Eliminar método de pago
+
+      description: Elimina un método de pago específico. Requiere rol Admin.
+
+      security:
+        - bearerAuth: []
+
+      parameters:
+        - name: id
+          in: path
+          required: true
+
+          schema:
+            type: integer
+
+          example: 1
+
+      responses:
+
+        '200':
+          description: Método de pago eliminado correctamente
+
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/EmptySuccessResponse'
+                  - type: object
+                    properties:
+                      message:
+                        example: Método de pago eliminado correctamente.
+
+        '401':
+          description: No autenticado
+
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedResponse'
+
+        '403':
+          description: No autorizado
+
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenResponse'
+
+        '404':
+          description: Método de pago no encontrado
+
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundResponse'
+  /imagenes-producto/{id}:
+    delete:
+      tags:
+        - Imágenes de Producto
+
+      summary: Eliminar imagen de producto
+
+      description: Elimina una imagen específica asociada a un producto.
+
+      security:
+        - bearerAuth: []
+
+      parameters:
+        - name: id
+          in: path
+          required: true
+
+          schema:
+            type: integer
+
+          example: 5
+
+      responses:
+
+        '200':
+          description: Imagen eliminada correctamente
+
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/EmptySuccessResponse'
+                  - type: object
+                    properties:
+                      message:
+                        example: Imagen eliminada correctamente.
+
+        '401':
+          description: No autenticado
+
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedResponse'
+
+        '403':
+          description: No autorizado
+
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenResponse'
+
+        '404':
+          description: Imagen no encontrada
+
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundResponse'
+  /reviews/productos:
+    post:
+      tags:
+        - Reviews Producto
+
+      summary: Crear review de producto
+
+      description: Permite a un cliente crear una reseña de un producto.
+
+      security:
+        - bearerAuth: []
+
+      requestBody:
+        required: true
+
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReviewProductoRequest'
+
+      responses:
+
+        '201':
+          description: Review creada correctamente
+
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReviewProductoResponse'
+
+        '401':
+          description: No autenticado
+
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedResponse'
+
+        '403':
+          description: No autorizado
+
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenResponse'
+
+        '422':
+          description: Error de validación
+
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationErrorResponse'
+  /reviews/productos/{idProducto}:
+    get:
+      tags:
+        - Reviews Producto
+
+      summary: Obtener reviews de un producto
+
+      description: Devuelve todas las reviews de un producto específico.
+
+      parameters:
+        - name: idProducto
+          in: path
+          required: true
+
+          schema:
+            type: integer
+
+          example: 3
+
+      responses:
+
+        '200':
+          description: Reviews obtenidas correctamente
+
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReviewsProductoResponse'
+
+        '404':
+          description: Producto no encontrado
+
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundResponse'
+  /reviews/productos/show/{id}:
+    get:
+      tags:
+        - Reviews Producto
+
+      summary: Obtener review por ID
+
+      description: Obtiene una review específica de un producto por su ID.
+
+      parameters:
+        - name: id
+          in: path
+          required: true
+
+          schema:
+            type: integer
+
+          example: 1
+
+      responses:
+
+        '200':
+          description: Review obtenida correctamente
+
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReviewProductoResponse'
+
+        '404':
+          description: Review no encontrada
+
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundResponse'
+  /reviews/productos/{id}:
+    put:
+      tags:
+        - Reviews Producto
+
+      summary: Actualizar review
+
+      description: Actualiza una review de producto existente.
+
+      security:
+        - bearerAuth: []
+
+      parameters:
+        - name: id
+          in: path
+          required: true
+
+          schema:
+            type: integer
+
+          example: 1
+
+      requestBody:
+        required: true
+
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReviewProductoRequest'
+
+      responses:
+
+        '200':
+          description: Review actualizada correctamente
+
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReviewProductoResponse'
+
+        '401':
+          description: No autenticado
+
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedResponse'
+
+        '403':
+          description: No autorizado
+
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenResponse'
+
+        '404':
+          description: Review no encontrada
+
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundResponse'
+
+        '422':
+          description: Error de validación
+
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationErrorResponse'
+  /reviews/productos/{id}:
+    delete:
+      tags:
+        - Reviews Producto
+
+      summary: Eliminar review
+
+      description: Elimina una review de producto.
+
+      security:
+        - bearerAuth: []
+
+      parameters:
+        - name: id
+          in: path
+          required: true
+
+          schema:
+            type: integer
+
+          example: 1
+
+      responses:
+
+        '200':
+          description: Review eliminada correctamente
+
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/EmptySuccessResponse'
+                  - type: object
+                    properties:
+                      message:
+                        example: Review eliminada correctamente.
+
+        '401':
+          description: No autenticado
+
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedResponse'
+
+        '403':
+          description: No autorizado
+
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenResponse'
+
+        '404':
+          description: Review no encontrada
+
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundResponse'
+  /mis-reviews/productos:
+    get:
+      tags:
+        - Reviews Producto
+
+      summary: Obtener mis reviews
+
+      description: Lista todas las reseñas creadas por el usuario autenticado.
+
+      security:
+        - bearerAuth: []
+
+      responses:
+
+        '200':
+          description: Reviews del usuario obtenidas correctamente
+
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MisReviewsProductoResponse'
+
+        '401':
+          description: No autenticado
+
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedResponse'
+  /ventas:
+    post:
+      tags:
+        - Ventas
+
+      summary: Crear una nueva venta
+
+      description: Registra una venta con uno o varios productos.
+
+      security:
+        - bearerAuth: []
+
+      requestBody:
+        required: true
+
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VentaRequest'
+
+      responses:
+
+        '201':
+          description: Venta creada correctamente
+
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VentaResponse'
+
+        '409':
+          description: Conflicto de negocio (stock o disponibilidad)
+
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/ProductoNoDisponibleResponse'
+                  - $ref: '#/components/schemas/StockInsuficienteResponse'
+
+        '401':
+          description: No autenticado
+
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedResponse'
+  /mis-ventas:
+    get:
+      tags:
+        - Ventas
+
+      summary: Obtener ventas del usuario autenticado
+
+      description: |
+        Devuelve una lista de todas las ventas realizadas por el usuario autenticado.
+
+      security:
+        - bearerAuth: []
+
+      responses:
+        '200':
+          description: Ventas obtenidas correctamente.
+
+          content:
+            application/json:
+              schema:
+                type: object
+
+                properties:
+
+                  success:
+                    type: boolean
+                    example: true
+
+                  data:
+                    type: array
+
+                    items:
+                      $ref: '#/components/schemas/Venta'
+
+                  message:
+                    type: string
+                    example: Ventas obtenidas correctamente.
+
+        '401':
+          description: No autenticado.
+
+          content:
+            application/json:
+              schema:
+                type: object
+
+                properties:
+
+                  success:
+                    type: boolean
+                    example: false
+
+                  message:
+                    type: string
+                    example: No autenticado.
+  /mis-compras:
+    get:
+      tags:
+        - Ventas
+
+      summary: Obtener compras del usuario autenticado
+
+      description: |
+        Devuelve una lista con todas las compras realizadas por el usuario en sesión.
+
+      security:
+        - bearerAuth: []
+
+      responses:
+
+        200:
+          description: Compras obtenidas correctamente.
+
+          content:
+            application/json:
+
+              schema:
+                type: object
+
+                properties:
+
+                  success:
+                    type: boolean
+                    example: true
+
+                  data:
+                    type: array
+
+                    items:
+                      $ref: '#/components/schemas/Venta'
+
+                  message:
+                    type: string
+                    example: Ventas obtenidas correctamente
+
+        401:
+          description: No autenticado.
+
+          content:
+            application/json:
+
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /venta/filtros:
+    post:
+      tags:
+        - Ventas
+
+      summary: Filtrar ventas
+
+      description: |
+        Obtiene las ventas utilizando filtros opcionales.
+        Requiere rol admin.
+
+      security:
+        - bearerAuth: []
+
+      requestBody:
+        required: true
+
+        content:
+          application/json:
+
+            schema:
+              $ref: '#/components/schemas/FiltroVentaRequest'
+
+      responses:
+
+        200:
+          description: Ventas obtenidas correctamente.
+
+          content:
+            application/json:
+
+              schema:
+                $ref: '#/components/schemas/VentaCollectionResponse'
+
+        401:
+          description: No autenticado.
+
+          content:
+            application/json:
+
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+        403:
+          description: Acceso denegado.
+
+          content:
+            application/json:
+
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
   /ventas/{id}/pagar:
     post:
       tags:
         - Ventas
-      summary: Pagar venta reservada
+
+      summary: Pagar una venta
+
+      description: |
+        Realiza el pago de una venta pendiente.
+        Requiere rol cliente.
+
       security:
         - bearerAuth: []
+
       parameters:
-        - in: path
-          name: id
+        - name: id
+          in: path
           required: true
+
           schema:
             type: integer
-      responses:
-        '200':
-          description: Venta pagada
+            example: 3
 
-  /mensajes:
-    post:
-      tags:
-        - Mensajes
-      summary: Enviar mensaje
-      security:
-        - bearerAuth: []
       requestBody:
         required: true
+
         content:
           application/json:
+
             schema:
-              type: object
-              properties:
-                id_receptor:
-                  type: integer
-                contenido:
-                  type: string
-      responses:
-        '201':
-          description: Mensaje enviado
+              $ref: '#/components/schemas/PagarVentaRequest'
 
-  /mensajes/conversaciones:
-    get:
+      responses:
+
+        200:
+          description: Venta pagada correctamente.
+
+          content:
+            application/json:
+
+              schema:
+                $ref: '#/components/schemas/VentaResponse'
+
+        401:
+          description: No autenticado.
+
+          content:
+            application/json:
+
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+        403:
+          description: Acceso denegado.
+
+          content:
+            application/json:
+
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+        404:
+          description: Venta no encontrada.
+
+          content:
+            application/json:
+
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+        409:
+          description: La venta ya fue pagada o no puede pagarse.
+
+          content:
+            application/json:
+
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /ventas/{id}/cancelar:
+    put:
       tags:
-        - Mensajes
-      summary: Obtener conversaciones
+        - Ventas
+
+      summary: Cancelar una venta
+
+      description: |
+        Cancela una venta.
+        Todos los roles autenticados pueden cancelar ventas.
+
       security:
         - bearerAuth: []
+
+      parameters:
+        - name: id
+          in: path
+          required: true
+
+          schema:
+            type: integer
+            example: 4
+
       responses:
-        '200':
-          description: Conversaciones obtenidas
 
-  /reviews/productos:
-    post:
-      tags:
-        - Reviews Productos
-      summary: Crear review de producto
-      security:
-        - bearerAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                id_producto:
-                  type: integer
-                calificacion:
-                  type: integer
-                comentario:
-                  type: string
-      responses:
-        '201':
-          description: Review creada
+        200:
+          description: Venta cancelada correctamente.
 
-  /reviews/vendedores:
-    post:
-      tags:
-        - Reviews Vendedores
-      summary: Crear review de vendedor
-      security:
-        - bearerAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                id_vendedor:
-                  type: integer
-                calificacion:
-                  type: integer
-                comentario:
-                  type: string
-      responses:
-        '201':
-          description: Review creada
+          content:
+            application/json:
 
-  /transacciones:
-    get:
-      tags:
-        - Transacciones
-      summary: Obtener transacciones
-      security:
-        - bearerAuth: []
-      responses:
-        '200':
-          description: Lista de transacciones
+              schema:
+                type: object
 
+                properties:
 
+                  success:
+                    type: boolean
+                    example: true
+
+                  data:
+                    type: object
+
+                    properties:
+
+                      id:
+                        type: integer
+                        example: 4
+
+                      id_cliente:
+                        type: integer
+                        example: 2
+
+                      lugar:
+                        type: string
+                        nullable: true
+                        example: UTICS
+
+                      latitud:
+                        type: number
+                        nullable: true
+                        example: null
+
+                      longitud:
+                        type: number
+                        nullable: true
+                        example: null
+
+                      status:
+                        type: string
+                        example: cancelada
+
+                      fecha:
+                        type: string
+                        format: date-time
+
+                      created_at:
+                        type: string
+                        format: date-time
+
+                      updated_at:
+                        type: string
+                        format: date-time
+
+                  message:
+                    type: string
+                    example: Venta cancelada correctamente.
+
+        401:
+          description: No autenticado.
+
+          content:
+            application/json:
+
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+        404:
+          description: Venta no encontrada.
+
+          content:
+            application/json:
+
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+        409:
+          description: La venta no puede cancelarse.
+
+          content:
+            application/json:
+
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              

@@ -14,7 +14,7 @@ class Venta extends Model
 
     protected $fillable = [
         'id_cliente',
-        'id_vendedor',
+
         'lugar',
         'latitud',
         'longitud',
@@ -32,10 +32,6 @@ class Venta extends Model
         return $this->belongsTo(User::class, 'id_cliente', 'id');
     }
 
-    public function vendedor()
-    {
-        return $this->belongsTo(User::class, 'id_vendedor', 'id');
-    }
     public function detalles()
     {
         return $this->hasMany(VentaDetalle::class, 'id_venta', 'id');

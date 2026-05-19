@@ -92,16 +92,8 @@ class AuthController extends Controller
         // Cargar relaciones
         $user->load('roles');
 
-        // Crear token
-        $token = $user->createToken('API_TOKEN')->plainTextToken;
-
-        $success = [
-            'token' => $token,
-            'user' => $user,
-        ];
-
         return $this->sendResponse(
-            $success,
+            $user,
             'Usuario registrado correctamente.',
             201
         );
@@ -133,6 +125,9 @@ class AuthController extends Controller
         );
     }
 
+
+//FALTA RUTA PARA CERRAR TODAS LAS SESIONES DE UN USUARIO (ELIMINAR TODOS LOS TOKENS)
+//Además de agregarlo a la documentación de OpenAPI
     /**
      * Cerrar todas las sesiones
      */
@@ -146,5 +141,5 @@ class AuthController extends Controller
         );
     }
 
-    
+
 }

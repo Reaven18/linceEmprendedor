@@ -20,13 +20,13 @@ class CheckRole
         }
 
         $userRoles = $request->user()
-            ->rol
+            ->roles
             ->pluck('nombre')
             ->map(fn ($r) => strtolower($r))
             ->toArray();
 
         // Admin bypass
-        if (in_array('admin', $userRoles)) {
+        if (in_array('Admin', $userRoles)) {
 
             return $next($request);
         }

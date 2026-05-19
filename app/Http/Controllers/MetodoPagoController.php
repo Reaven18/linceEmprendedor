@@ -50,7 +50,7 @@ class MetodoPagoController extends Controller
      */
     public function show($id)
     {
-        $metodo = MetodoPago::with('transacciones')->find($id);
+        $metodo = MetodoPago::find($id);
 
         if (!$metodo) {
 

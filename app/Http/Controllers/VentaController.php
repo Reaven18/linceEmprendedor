@@ -20,14 +20,90 @@ class VentaController extends Controller
     /**
      * Obtener ventas del usuario autenticado
      */
-    public function index()
+    public function misVentas()
     {
         $ventas = Venta::with([
             'cliente',
             'detalles.producto.imagenes',
-            'transacciones.metodoPago'
+            'transaccion.metodoPago'
+        ])
+        ->whereHas('detalles.producto', function ($query) {
+            $query->where('id_vendedor', Auth::id());
+        })
+        ->orderBy('fecha', 'desc')
+        ->get();
+
+        return $this->sendResponse(
+            $ventas,
+            'Ventas obtenidas correctamente.'
+        );
+    }
+    public function misVentasFiltros($lugar, $status, $fecha)
+    {
+        $query = Venta::with([
+            'cliente',
+            'detalles.producto.imagenes',
+            'transaccion.metodoPago'
+        ]);
+        if ($lugar != null)
+            {
+                $query->where('lugar', 'like', '%' . $lugar . '%');
+            }
+        if ($status != null)
+            {
+                $query->where('status', $status);
+            }
+        if ($fecha != null)
+            {
+                $query->whereDate('fecha', $fecha);
+            }
+        return $query->get();
+    }
+
+    public function misCompras()
+    {
+        $ventas = Venta::with([
+            'detalles.producto.vendedor',
+            'transaccion.metodoPago'
         ])
         ->where('id_cliente', Auth::id())
+        ->orderBy('fecha','desc')
+        ->get();
+
+        return $this->sendResponse(
+            $ventas,
+            'Ventas obtenidas correctamente'
+        );
+    }
+
+     public function misComprasFiltros($lugar, $status, $fecha)
+    {
+        $query = Venta::with([
+            'detalles.producto.vendedor',
+            'transaccion.metodoPago'
+        ]);
+        if ($lugar != null)
+            {
+                $query->where('lugar', 'like', '%' . $lugar . '%');
+            }
+        if ($status != null)
+            {
+                $query->where('status', $status);
+            }
+        if ($fecha != null)
+            {
+                $query->whereDate('fecha', $fecha);
+            }
+        return $query->get();
+    }
+
+    public function indexAdmin()
+    {
+        $ventas = Venta::with([
+            'cliente',
+            'detalles.producto.vendedor',
+            'transaccion.metodoPago'
+        ])
         ->orderBy('fecha', 'desc')
         ->get();
 
@@ -37,6 +113,32 @@ class VentaController extends Controller
         );
     }
 
+    public function indexAdminFiltros(Request $request)
+    {
+        $lugar = $request->input('lugar');
+        $status = $request->input('status');
+        $fecha = $request->input('fecha');
+
+        $query = Venta::with([
+            'cliente',
+            'detalles.producto.vendedor',
+            'transaccion.metodoPago'
+        ]);
+        if ($lugar != null)
+            {
+                $query->where('lugar', 'like', '%' . $lugar . '%');
+            }
+        if ($status != null)
+            {
+                $query->where('status', $status);
+            }
+        if ($fecha != null)
+            {
+                $query->whereDate('fecha', $fecha);
+            }
+        return $query->get();
+    }
+
     /**
      * Obtener venta por ID
      */
@@ -44,8 +146,8 @@ class VentaController extends Controller
     {
         $venta = Venta::with([
             'cliente',
-            'detalles.producto.imagenes',
-            'transacciones.metodoPago'
+            'detalles.producto.vendedor',
+            'transaccion.metodoPago'
         ])->find($id);
 
         if (!$venta) {
@@ -75,7 +177,6 @@ class VentaController extends Controller
             'Venta obtenida correctamente.'
         );
     }
-
     /**
      * Crear venta
      *
@@ -90,11 +191,8 @@ class VentaController extends Controller
             'lugar' => 'nullable|string|max:100',
             'latitud' => 'nullable|numeric',
             'longitud' => 'nullable|numeric',
-
             'tipo' => 'required|in:reservada,pagada',
-
             'productos' => 'required|array|min:1',
-
             'productos.*.id_producto' => 'required|exists:productos,id',
             'productos.*.cantidad' => 'required|integer|min:1',
 
@@ -181,6 +279,7 @@ class VentaController extends Controller
                     'id_producto' => $producto->id,
                 ]);
 
+                $producto->decrement('stock', $item['cantidad']);
                 $total += $subtotal;
             }
 
@@ -200,8 +299,8 @@ class VentaController extends Controller
 
             $venta->load([
                 'cliente',
-                'detalles.producto.imagenes',
-                'transacciones.metodoPago'
+                'detalles.producto.vendedor',
+                'transaccion.metodoPago'
             ]);
 
             return $this->sendResponse(
@@ -297,7 +396,7 @@ class VentaController extends Controller
             $venta->load([
                 'cliente',
                 'detalles.producto',
-                'transacciones.metodoPago'
+                'transaccion.metodoPago'
             ]);
 
             return $this->sendResponse(
