@@ -12,6 +12,7 @@ use App\Http\Controllers\ReviewProductoController;
 use App\Http\Controllers\ReviewVendedorController;
 use App\Http\Controllers\TransaccionController;
 use App\Http\Controllers\VentaController;
+use App\Http\Controllers\UsuarioController;
 
 /*
 |--------------------------------------------------------------------------
@@ -56,6 +57,22 @@ Route::post('/register', [
     'register'
 ]);
 
+/*
+|--------------------------------------------------------------------------
+| Usuarios
+|--------------------------------------------------------------------------
+*/
+//Validada
+Route::get('/vendedores', [
+        UsuarioController::class,
+        'vendedores'
+    ]);
+
+//Validada
+Route::get('/usuarios/{id}', [
+    UsuarioController::class,
+    'show'
+]);
 /*
 |--------------------------------------------------------------------------
 | CATEGORÍAS
@@ -225,6 +242,115 @@ Route::middleware('auth:sanctum')->group(function () {
     ]);
 
     /*
+     |--------------------------------------------------------------------------
+    | Usuarios
+    |--------------------------------------------------------------------------
+    */
+
+    //validada
+    Route::get('/clientes', [
+        UsuarioController::class,
+        'clientes'
+    ])->middleware('role:admin,vendedor');
+
+    //validada
+    Route::get('/usuarios', [
+        UsuarioController::class,
+        'index'
+    ])->middleware('role:admin');
+    //validada
+    /*
+    * Parametros de Body:
+    {
+        "nombre": "",
+        "telefono": "",
+        "carrera": "",
+        "password": ""
+    }
+    * Respuesta 200
+    {
+        "success": true,
+        "data": {
+            "id": 2,
+            "nombre": "Alfonso Emilio Ruiz Olvera",
+            "correo": "22030128@itcelaya.edu.mx",
+            "telefono": "4612312701",
+            "carrera": "Ingeniería en Sistemas Computacionales",
+            "latitud": null,
+            "longitud": null,
+            "negocio_activo": false,
+            "baneado": false,
+            "created_at": "2026-05-15T23:41:33.000000Z",
+            "updated_at": "2026-05-20T20:53:05.000000Z"
+        },
+        "message": "Perfil actualizado con éxito."
+    }
+     */
+    Route::put('/usuarios/{id}', [
+        UsuarioController::class,
+        'update'
+    ])->middleware('role:admin');
+
+    //validada
+    /*
+    * Parametros de Body:
+    {
+        "nombre": "",
+        "correo": "",
+        "password":"",
+        "telefono": "",
+        "carrera": ""
+    }
+    * Respuesta 200
+    {
+        "success": true,
+        "data": {
+            "id": 2,
+            "nombre": "Alfonso Emilio Ruiz Olvera",
+            "correo": "22030128@itcelaya.edu.mx",
+            "telefono": "4612312701",
+            "carrera": "Maetria en Mecatronica",
+            "latitud": null,
+            "longitud": null,
+            "negocio_activo": false,
+            "baneado": false,
+            "created_at": "2026-05-15T23:41:33.000000Z",
+            "updated_at": "2026-05-20T21:11:02.000000Z"
+        },
+        "message": "Usuario actualizado con éxito."
+    }
+     */
+    Route::put('/usuarios', [
+        UsuarioController::class,
+        'updateMe'
+    ]);
+
+    //vallidada
+    Route::put('/activar-negocio/{id}', [
+        UsuarioController::class,
+        'activarNegocio'
+    ])->middleware('role:admin,vendedor');
+
+    //validada
+    Route::put('/banear-usuario/{id}', [
+        UsuarioController::class,
+        'banearUsuario'
+    ])->middleware('role:admin');
+
+
+    //validada
+    Route::delete('/usuarios/{id}', [
+        UsuarioController::class,
+        'destroy'
+    ])->middleware('role:admin');
+
+    //validada
+    Route::delete('/usuarios', [
+        UsuarioController::class,
+        'destroyMe'
+    ]);
+
+    /*
     |--------------------------------------------------------------------------
     | PRODUCTOS
     |--------------------------------------------------------------------------
@@ -243,6 +369,7 @@ Route::middleware('auth:sanctum')->group(function () {
             [       {
                         "id":
                     }
+            ],
         }
         "imagenes":
             [
@@ -323,11 +450,7 @@ Route::middleware('auth:sanctum')->group(function () {
         "stock":
         "es_perecedero":
         "status":
-        "categorias"
-            [       {
-                        "id":
-                    }
-        }
+        "categorias":[id,id,...],
         "imagenes":
             [
                 "https://site.com/1.jpg",

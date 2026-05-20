@@ -5,6 +5,9 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Auth;
+
+
 
 class UsuarioController extends Controller
 {
@@ -18,6 +21,33 @@ class UsuarioController extends Controller
         return $this->sendResponse(
             $usuarios,
             'Usuarios obtenidos con éxito.'
+        );
+    }
+
+    public function clientes()
+    {
+        $usuarios = User::with('roles')
+        ->whereHas('roles', function ($query) {
+            $query->where('id', 2);
+        })
+        ->get();
+
+        return $this->sendResponse(
+            $usuarios,
+            'Clientes obtenidos con éxito.'
+        );
+    }
+    public function vendedores()
+    {
+        $usuarios = User::with('roles')
+        ->whereHas('roles', function ($query) {
+            $query->where('id', 1);
+        })
+        ->get();
+
+        return $this->sendResponse(
+            $usuarios,
+            'Vendedores obtenidos con éxito.'
         );
     }
     /*
@@ -43,9 +73,9 @@ class UsuarioController extends Controller
     /*
     Actualizar información de un usuario
      */
-    public function update($id, Request $request)
+    public function updateMe(Request $request)
     {
-        $usuario = User::find($id);
+        $usuario = User::find(Auth::id());
 
         if (!$usuario) {
             return $this->sendError(
@@ -57,7 +87,7 @@ class UsuarioController extends Controller
 
         $request->validate([
             'nombre' => 'sometimes|required|string|max:255',
-            'correo' => 'sometimes|required|email|unique:users,correo,' . $id,
+            'correo' => 'sometimes|required|email|unique:users,correo,' . $usuario->id,
             'password' => 'sometimes|required|string|min:6',
             'telefono' => 'sometimes|nullable|string|max:10',
             'carrera' => 'sometimes|nullable|string|max:255',
@@ -85,6 +115,46 @@ class UsuarioController extends Controller
         return $this->sendResponse(
             $usuario,
             'Usuario actualizado con éxito.'
+        );
+    }
+
+    public function update(Request $request, $id)
+    {
+        $usuario = User::find($id);
+
+        if (!$usuario) {
+            return $this->sendError(
+                'Usuario no encontrado.',
+                ['error' => 'No existe un usuario con ese ID.'],
+                404
+            );
+        }
+
+        $request->validate([
+            'nombre' => 'sometimes|required|string|max:255',
+            'telefono' => 'sometimes|nullable|string|max:10',
+            'carrera' => 'sometimes|nullable|string|max:255',
+            'password' => 'sometimes|required|string|min:6',
+        ]);
+
+        if ($request->has('nombre')) {
+            $usuario->nombre = $request->nombre;
+        }
+        if ($request->has('telefono')) {
+            $usuario->telefono = $request->telefono;
+        }
+        if ($request->has('carrera')) {
+            $usuario->carrera = $request->carrera;
+        }
+        if ($request->has('password')) {
+            $usuario->password = Hash::make($request->password);
+        }
+
+        $usuario->save();
+
+        return $this->sendResponse(
+            $usuario,
+            'Perfil actualizado con éxito.'
         );
     }
 
@@ -140,7 +210,6 @@ class UsuarioController extends Controller
     public function banearUsuario($id)
     {
         $usuario = User::find($id);
-
         if (!$usuario) {
             return $this->sendError(
                 'Usuario no encontrado.',
@@ -157,7 +226,7 @@ class UsuarioController extends Controller
             'Usuario ' . ($usuario->baneado ? 'baneado' : 'desbaneado') . ' con éxito.'
         );
     }
-    
+
 
     public function destroy($id)
     {
@@ -177,6 +246,26 @@ class UsuarioController extends Controller
             null,
             'Usuario eliminado con éxito.'
         );
+    }
+
+    public function destroyMe()
+    {
+        $usuario = User::find(Auth::id());
+
+        if (!$usuario) {
+            return $this->sendError(
+                'Usuario no encontrado.',
+                ['error' => 'No existe un usuario con ese ID.'],
+                404
+             );
+        }
+
+        $usuario->delete();
+
+        return $this->sendResponse(
+            null,
+            'Cuenta eliminada con éxito.'
+         );
     }
 
 }
