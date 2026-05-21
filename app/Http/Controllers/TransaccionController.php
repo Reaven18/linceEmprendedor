@@ -22,7 +22,7 @@ class TransaccionController extends Controller
             'venta.cliente',
             'metodoPago'
         ])
-        ->orderBy('fecha', 'desc')
+        ->orderBy('created_at', 'desc')
         ->get();
 
         return $this->sendResponse(
@@ -87,7 +87,7 @@ class TransaccionController extends Controller
             $query->where('id_cliente', Auth::id());
 
         })
-        ->orderBy('fecha', 'desc')
+        ->orderBy('created_at', 'desc')
         ->get();
 
         return $this->sendResponse(

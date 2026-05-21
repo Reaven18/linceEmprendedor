@@ -28,7 +28,7 @@ class UsuarioController extends Controller
     {
         $usuarios = User::with('roles')
         ->whereHas('roles', function ($query) {
-            $query->where('id', 2);
+            $query->where('id', 3);
         })
         ->get();
 
@@ -41,7 +41,7 @@ class UsuarioController extends Controller
     {
         $usuarios = User::with('roles')
         ->whereHas('roles', function ($query) {
-            $query->where('id', 1);
+            $query->where('id', 2);
         })
         ->get();
 

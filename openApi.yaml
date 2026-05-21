@@ -256,10 +256,42 @@ components:
           items:
             $ref: '#/components/schemas/DetalleVenta'
 
-        transaccion:
-          nullable: true
-          allOf:
-            - $ref: '#/components/schemas/Transaccion'
+    Transaccion:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+
+        id_venta:
+          type: integer
+          example: 9
+
+        consecutivo:
+          type: integer
+          example: 1
+
+        total:
+          type: string
+          example: "10.00"
+
+        id_metodo_de_pago:
+          type: integer
+          example: 1
+
+        created_at:
+          type: string
+          format: date-time
+
+        updated_at:
+          type: string
+          format: date-time
+
+        venta:
+          $ref: '#/components/schemas/Venta'
+
+        metodo_pago:
+          $ref: '#/components/schemas/MetodoPago'
     DetalleVenta:
       type: object
 
@@ -283,37 +315,6 @@ components:
 
         producto:
           $ref: '#/components/schemas/Producto'
-    Transaccion:
-      type: object
-
-      properties:
-
-        id:
-          type: integer
-
-        id_venta:
-          type: integer
-
-        consecutivo:
-          type: integer
-
-        total:
-          type: string
-          example: "10.00"
-
-        id_metodo_de_pago:
-          type: integer
-
-        metodo_pago:
-          $ref: '#/components/schemas/MetodoPago'
-
-        created_at:
-          type: string
-          format: date-time
-
-        updated_at:
-          type: string
-          format: date-time
 #Auth Schemas
     LoginRequest:
       type: object
@@ -924,6 +925,22 @@ components:
             error:
               type: string
               example: El producto "X" no está disponible.
+#Transacciones Schemas
+    TransaccionCollectionResponse:
+          type: object
+          properties:
+            success:
+              type: boolean
+              example: true
+
+            data:
+              type: array
+              items:
+                $ref: '#/components/schemas/Transaccion'
+
+            message:
+              type: string
+              example: Transacciones obtenidas correctamente.
     StockInsuficienteResponse:
       type: object
 
@@ -2648,4 +2665,569 @@ paths:
 
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-              
+  /transacciones:
+    get:
+      tags:
+        - Transacciones
+      summary: Obtener todas las transacciones
+      description: |
+        Devuelve todas las transacciones registradas.
+        Requiere rol admin.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Transacciones obtenidas correctamente.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TransaccionCollectionResponse'
+        '403':
+          description: Acceso denegado.
+
+  /mis-transacciones:
+    get:
+      tags:
+        - Transacciones
+      summary: Obtener mis transacciones
+      description: |
+        Devuelve todas las transacciones del usuario autenticado.
+        Requiere rol cliente.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Transacciones del usuario obtenidas correctamente.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TransaccionCollectionResponse'
+        '403':
+          description: Acceso denegado.
+
+  /transacciones/venta/{idVenta}:
+    get:
+      tags:
+        - Transacciones
+      summary: Obtener transacciones de una venta
+      description: |
+        Devuelve todas las transacciones asociadas a una venta.
+        Requiere rol cliente o admin.
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: idVenta
+          required: true
+          schema:
+            type: integer
+          example: 9
+      responses:
+        '200':
+          description: Transacciones obtenidas correctamente.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TransaccionCollectionResponse'
+
+        '403':
+          description: Acceso denegado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+        '404':
+          description: No se encontraron transacciones.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /transacciones/{idVenta}/{consecutivo}:
+    get:
+      tags:
+        - Transacciones
+      summary: Obtener una transacción específica
+      description: |
+        Obtiene una transacción usando el id de la venta
+        y el consecutivo de la transacción.
+        Requiere rol cliente o admin.
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: idVenta
+          required: true
+          schema:
+            type: integer
+          example: 9
+
+        - in: path
+          name: consecutivo
+          required: true
+          schema:
+            type: integer
+          example: 1
+
+      responses:
+        '200':
+          description: Transacción obtenida correctamente.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TransaccionResponse'
+
+        '403':
+          description: Acceso denegado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+        '404':
+          description: Transacción no encontrada.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /vendedores:
+    get:
+      tags:
+        - Usuarios
+      summary: Obtener vendedores
+      description: Retorna todos los usuarios con rol vendedor.
+      responses:
+        '200':
+          description: Vendedores obtenidos correctamente.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Usuario'
+                  message:
+                    type: string
+                    example: Vendedores obtenidos correctamente.
+
+  /usuarios/{id}:
+    get:
+      tags:
+        - Usuarios
+      summary: Obtener usuario por ID
+      description: Retorna la información de un usuario específico.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Usuario obtenido correctamente.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/Usuario'
+                  message:
+                    type: string
+                    example: Usuario obtenido correctamente.
+        '404':
+          description: Usuario no encontrado.
+
+  /clientes:
+    get:
+      tags:
+        - Usuarios
+      summary: Obtener clientes
+      description: Retorna todos los usuarios con rol cliente.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Clientes obtenidos correctamente.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Usuario'
+                  message:
+                    type: string
+                    example: Clientes obtenidos correctamente.
+        '403':
+          description: Acceso denegado.
+
+  /usuarios:
+    get:
+      tags:
+        - Usuarios
+      summary: Obtener todos los usuarios
+      description: Retorna todos los usuarios registrados.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Usuarios obtenidos correctamente.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Usuario'
+                  message:
+                    type: string
+                    example: Usuarios obtenidos correctamente.
+        '403':
+          description: Acceso denegado.
+
+    put:
+      tags:
+        - Usuarios
+      summary: Actualizar perfil propio
+      description: Actualiza la información del usuario autenticado.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                nombre:
+                  type: string
+                correo:
+                  type: string
+                  format: email
+                password:
+                  type: string
+                telefono:
+                  type: string
+                carrera:
+                  type: string
+      responses:
+        '200':
+          description: Perfil actualizado con éxito.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/Usuario'
+                  message:
+                    type: string
+                    example: Perfil actualizado con éxito.
+
+  /usuarios/{id}:
+    put:
+      tags:
+        - Usuarios
+      summary: Actualizar usuario
+      description: Actualiza los datos de un usuario específico.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                nombre:
+                  type: string
+                telefono:
+                  type: string
+                carrera:
+                  type: string
+                password:
+                  type: string
+      responses:
+        '200':
+          description: Usuario actualizado con éxito.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/Usuario'
+                  message:
+                    type: string
+                    example: Usuario actualizado con éxito.
+        '403':
+          description: Acceso denegado.
+        '404':
+          description: Usuario no encontrado.
+
+  activar-negocio/{id}:
+    put:
+      tags:
+        - Usuarios
+      summary: Activar negocio
+      description: Activa o desactiva el negocio de un usuario.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Estado del negocio actualizado correctamente.
+        '403':
+          description: Acceso denegado.
+        '404':
+          description: Usuario no encontrado.
+
+  /banear-usuario/{id}:
+    put:
+      tags:
+        - Usuarios
+      summary: Banear usuario
+      description: Banea o desbanea un usuario.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Estado del usuario actualizado correctamente.
+        '403':
+          description: Acceso denegado.
+        '404':
+          description: Usuario no encontrado.
+
+  /usuarios/{id}:
+    delete:
+      tags:
+        - Usuarios
+      summary: Eliminar usuario
+      description: Elimina un usuario específico.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Usuario eliminado correctamente.
+        '403':
+          description: Acceso denegado.
+        '404':
+          description: Usuario no encontrado.
+
+  /usuarios:
+    delete:
+      tags:
+        - Usuarios
+      summary: Eliminar cuenta propia
+      description: Elimina la cuenta del usuario autenticado.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Usuario eliminado correctamente.
+  /reviews/vendedores:
+  post:
+    tags:
+      - Reviews Vendedores
+    summary: Crear review de vendedor
+    description: Crea una reseña hacia un vendedor.
+    security:
+      - bearerAuth: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - id_vendedor
+              - calificacion
+            properties:
+              id_vendedor:
+                type: integer
+                example: 2
+              calificacion:
+                type: integer
+                minimum: 1
+                maximum: 5
+                example: 5
+              comentario:
+                type: string
+                example: Excelente servicio
+              anonimo:
+                type: boolean
+                example: false
+    responses:
+      "201":
+        description: Review creada correctamente
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  example: true
+                data:
+                  type: object
+                  properties:
+                    id:
+                      type: integer
+                    id_cliente:
+                      type: integer
+                    id_vendedor:
+                      type: integer
+                    calificacion:
+                      type: integer
+                    comentario:
+                      type: string
+                    estado:
+                      type: string
+                      example: activa
+                    anonimo:
+                      type: boolean
+                    created_at:
+                      type: string
+                      format: date-time
+                    updated_at:
+                      type: string
+                      format: date-time
+                message:
+                  type: string
+                  example: Review creada correctamente.
+  /reviews/vendedores/show/{id}:
+    get:
+      tags:
+        - Reviews Vendedores
+      summary: Obtener review por ID
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Review obtenida correctamente
+        "404":
+          description: Review no encontrada
+
+  /reviews/vendedores/{id}:
+    put:
+      tags:
+        - Reviews Vendedores
+      summary: Actualizar review
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                id_vendedor:
+                  type: integer
+                calificacion:
+                  type: integer
+                comentario:
+                  type: string
+                anonimo:
+                  type: boolean
+      responses:
+        "200":
+          description: Review actualizada correctamente
+
+    delete:
+      tags:
+        - Reviews Vendedores
+      summary: Eliminar review
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Review eliminada correctamente
+
+  /reviews/vendedores/{idVendedor}:
+    get:
+      tags:
+        - Reviews Vendedores
+      summary: Obtener reviews por vendedor
+      parameters:
+        - name: idVendedor
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Reviews obtenidas correctamente
+
+  /mis-reviews/vendedores:
+    get:
+      tags:
+        - Reviews Vendedores
+      summary: Obtener mis reviews
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Reviews del usuario autenticado
+          

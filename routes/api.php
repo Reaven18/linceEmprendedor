@@ -165,6 +165,40 @@ Route::get('/reviews/productos/{idProducto}', [
     'index'
 ]);
 
+//validada
+/*
+* Respuesta 200
+{
+    "success": true,
+    "data": [
+        {
+            "id": 1,
+            "id_cliente": 2,
+            "id_vendedor": 5,
+            "calificacion": 5,
+            "comentario": "Excelente Servicio",
+            "estado": "activa",
+            "anonimo": false,
+            "created_at": "2026-05-21T06:52:55.000000Z",
+            "updated_at": "2026-05-21T06:52:55.000000Z",
+            "cliente": {
+                "id": 2,
+                "nombre": "Alfonso Emilio Ruiz Olvera",
+                "correo": "22030128@itcelaya.edu.mx",
+                "telefono": "4612312701",
+                "carrera": "Maetria en Mecatronica",
+                "latitud": null,
+                "longitud": null,
+                "negocio_activo": true,
+                "baneado": false,
+                "created_at": "2026-05-15T23:41:33.000000Z",
+                "updated_at": "2026-05-20T21:17:38.000000Z"
+            }
+        }
+    ],
+    "message": "Reviews obtenidas correctamente."
+}
+*/
 Route::get('/reviews/vendedores/{idVendedor}', [
     ReviewVendedorController::class,
     'index'
@@ -1190,21 +1224,25 @@ Route::middleware('auth:sanctum')->group(function () {
     |--------------------------------------------------------------------------
     */
 
+    //validada
     Route::get('/transacciones', [
         TransaccionController::class,
         'index'
     ])->middleware('role:admin');
 
+    //validada
     Route::get('/mis-transacciones', [
         TransaccionController::class,
         'misTransacciones'
     ])->middleware('role:cliente');
 
+    //validada
     Route::get('/transacciones/venta/{idVenta}', [
         TransaccionController::class,
         'porVenta'
     ])->middleware('role:cliente,admin');
 
+    //validada
     Route::get('/transacciones/{idVenta}/{consecutivo}', [
         TransaccionController::class,
         'show'
@@ -1489,26 +1527,141 @@ Route::middleware('auth:sanctum')->group(function () {
     |--------------------------------------------------------------------------
     */
 
+    //Validada
+    /*
+    * Parametros de Body:
+    {
+        "id_vendedor": 2,
+        "calificacion": 5,
+        "comentario": "Excelente Servicio",
+        "anonimo": false
+    }
+    * Respuesta 201:
+    {
+    "success": true,
+        "data": {
+            "id_cliente": 2,
+            "id_vendedor": 5,
+            "calificacion": 5,
+            "comentario": "Excelente Servicio",
+            "estado": "activa",
+            "anonimo": false,
+            "updated_at": "2026-05-21T06:52:55.000000Z",
+            "created_at": "2026-05-21T06:52:55.000000Z",
+            "id": 1,
+            "cliente": {
+                "id": 2,
+                "nombre": "Alfonso Emilio Ruiz Olvera",
+                "correo": "22030128@itcelaya.edu.mx",
+                "telefono": "4612312701",
+                "carrera": "Maetria en Mecatronica",
+                "latitud": null,
+                "longitud": null,
+                "negocio_activo": true,
+                "baneado": false,
+                "created_at": "2026-05-15T23:41:33.000000Z",
+                "updated_at": "2026-05-20T21:17:38.000000Z"
+            },
+            "vendedor": {
+                "id": 5,
+                "nombre": "Fernanda Peréz Banda",
+                "correo": "200030213@itcelaya.edu.mx",
+                "telefono": "4611737283",
+                "carrera": "Ing. Gestión Empresarial",
+                "latitud": null,
+                "longitud": null,
+                "negocio_activo": false,
+                "baneado": false,
+                "created_at": "2026-05-21T06:50:01.000000Z",
+                "updated_at": "2026-05-21T06:50:01.000000Z"
+            }
+        },
+        "message": "Review creada correctamente."
+    }
+     */
     Route::post('/reviews/vendedores', [
         ReviewVendedorController::class,
         'store'
     ])->middleware('role:cliente');
 
+    //validada
     Route::get('/reviews/vendedores/show/{id}', [
         ReviewVendedorController::class,
         'show'
     ])->middleware('role:cliente,vendedor,admin');
 
+    //validada
+    /*
+    * Parametros de Body:
+    {
+        "id_vendedor": 5,
+        "calificacion": 5,
+        "comentario": "Excelente Servicio",
+        "anonimo": true
+    }
+    * Respuesta 200:
+    {
+        "success": true,
+        "data": {
+            "id": 1,
+            "id_cliente": 2,
+            "id_vendedor": 5,
+            "calificacion": 5,
+            "comentario": "Excelente Servicio",
+            "estado": "activa",
+            "anonimo": true,
+            "created_at": "2026-05-21T06:52:55.000000Z",
+            "updated_at": "2026-05-21T06:56:49.000000Z",
+            "cliente": {
+                "id": 2,
+                "nombre": "Alfonso Emilio Ruiz Olvera",
+                "correo": "22030128@itcelaya.edu.mx",
+                "telefono": "4612312701",
+                "carrera": "Maetria en Mecatronica",
+                "latitud": null,
+                "longitud": null,
+                "negocio_activo": true,
+                "baneado": false,
+                "created_at": "2026-05-15T23:41:33.000000Z",
+                "updated_at": "2026-05-20T21:17:38.000000Z"
+            },
+            "vendedor": {
+                "id": 5,
+                "nombre": "Fernanda Peréz Banda",
+                "correo": "200030213@itcelaya.edu.mx",
+                "telefono": "4611737283",
+                "carrera": "Ing. Gestión Empresarial",
+                "latitud": null,
+                "longitud": null,
+                "negocio_activo": false,
+                "baneado": false,
+                "created_at": "2026-05-21T06:50:01.000000Z",
+                "updated_at": "2026-05-21T06:50:01.000000Z"
+            }
+        },
+        "message": "Review actualizada correctamente."
+    }
+     */
     Route::put('/reviews/vendedores/{id}', [
         ReviewVendedorController::class,
         'update'
     ])->middleware('role:cliente,admin');
 
+    //validada
+     /*
+     * Respuesta 200
+     {
+        "success": true,
+        "data": [],
+        "message": "Review eliminada correctamente."
+     }
+     */
     Route::delete('/reviews/vendedores/{id}', [
         ReviewVendedorController::class,
         'destroy'
     ])->middleware('role:cliente,admin');
 
+    //validada
     Route::get('/mis-reviews/vendedores', [
         ReviewVendedorController::class,
         'misReviews'

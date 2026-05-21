@@ -9,7 +9,7 @@ class ReviewVendedores extends Model
 {
     use HasFactory;
 
-    protected $table = 'reviewsVendedores';
+    protected $table = 'reviews_vendedores';
     protected $primaryKey = 'id';
 
     protected $fillable = [
