@@ -1253,32 +1253,87 @@ Route::middleware('auth:sanctum')->group(function () {
     | MENSAJES
     |--------------------------------------------------------------------------
     */
+    //Tokens de prueba
+    //perfil 1 22030128@itcelaya.edu.mx PWVogdDEPBpLga0UKqCcT6yIetY1gwffCt13ADRa5b975ca3 id: 2
+    //perfil 2 200030213@itcelaya.edu.mx gQFoUu7HuhQrSyFZJBjol5wDO4afVfecRyZnniqKadcb6cf5 id: 5
 
+    //validada
     Route::get('/mensajes/conversaciones', [
         MensajeController::class,
         'conversaciones'
     ])->middleware('role:cliente,vendedor');
 
+    //validada
     Route::get('/mensajes/chat/{idUsuario}', [
         MensajeController::class,
         'chat'
     ])->middleware('role:cliente,vendedor');
 
+    //validada
+    /*
+    * Parametros de Body:
+    {
+        "id_receptor": ,
+        "contenido": ""
+    }
+    * Respuesta 201:
+    {
+        "success": true,
+        "data": {
+            "id_emisor": 2,
+            "id_receptor": 5,
+            "contenido": "Hola Fer :)",
+            "leido": false,
+            "id": 1,
+            "emisor": {
+                "id": 2,
+                "nombre": "Alfonso Emilio Ruiz Olvera",
+                "correo": "22030128@itcelaya.edu.mx",
+                "telefono": "4612312701",
+                "carrera": "Maetria en Mecatronica",
+                "latitud": null,
+                "longitud": null,
+                "negocio_activo": true,
+                "baneado": false,
+                "created_at": "2026-05-15T23:41:33.000000Z",
+                "updated_at": "2026-05-20T21:17:38.000000Z"
+            },
+            "receptor": {
+                "id": 5,
+                "nombre": "Fernanda Peréz Banda",
+                "correo": "200030213@itcelaya.edu.mx",
+                "telefono": "4611737283",
+                "carrera": "Ing. Gestión Empresarial",
+                "latitud": null,
+                "longitud": null,
+                "negocio_activo": false,
+                "baneado": false,
+                "created_at": "2026-05-21T06:50:01.000000Z",
+                "updated_at": "2026-05-21T06:50:01.000000Z"
+            }
+        },
+        "message": "Mensaje enviado correctamente."
+    }
+     */
     Route::post('/mensajes', [
         MensajeController::class,
         'store'
     ])->middleware('role:cliente,vendedor');
 
+
+    //validada
     Route::put('/mensajes/{id}/leido', [
         MensajeController::class,
         'marcarLeido'
     ])->middleware('role:cliente,vendedor');
 
+    //validada
     Route::get('/mensajes/no-leidos', [
         MensajeController::class,
         'noLeidos'
     ])->middleware('role:cliente,vendedor');
 
+    //validada
     Route::delete('/mensajes/{id}', [
         MensajeController::class,
         'destroy'

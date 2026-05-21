@@ -31,7 +31,7 @@ class MensajeController extends Controller
                   ->orWhere('id_receptor', $userId);
 
         })
-        ->orderBy('enviado_en', 'desc')
+        ->orderBy('created_at', 'desc')
         ->get();
 
         // Agrupar conversaciones únicas
@@ -73,11 +73,7 @@ class MensajeController extends Controller
 
         $userId = Auth::id();
 
-        $mensajes = Mensaje::with([
-            'emisor',
-            'receptor'
-        ])
-        ->where(function ($query) use ($userId, $idUsuario) {
+        $mensajes = Mensaje::where(function ($query) use ($userId, $idUsuario) {
 
             $query->where('id_emisor', $userId)
                   ->where('id_receptor', $idUsuario);
@@ -89,7 +85,7 @@ class MensajeController extends Controller
                   ->where('id_receptor', $userId);
 
         })
-        ->orderBy('enviado_en', 'asc')
+        ->orderBy('created_at', 'asc')
         ->get();
 
         // Marcar mensajes recibidos como leídos
@@ -186,12 +182,9 @@ class MensajeController extends Controller
      */
     public function noLeidos()
     {
-        $mensajes = Mensaje::with([
-            'emisor'
-        ])
-        ->where('id_receptor', Auth::id())
+        $mensajes = Mensaje::where('id_receptor', Auth::id())
         ->where('leido', false)
-        ->orderBy('enviado_en', 'desc')
+        ->orderBy('created_at', 'desc')
         ->get();
 
         return $this->sendResponse(

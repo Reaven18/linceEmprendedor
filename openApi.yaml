@@ -315,6 +315,29 @@ components:
 
         producto:
           $ref: '#/components/schemas/Producto'
+    Mensaje:
+      type: object
+      properties:
+        id:
+          type: integer
+        id_emisor:
+          type: integer
+        id_receptor:
+          type: integer
+        contenido:
+          type: string
+        leido:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        emisor:
+          $ref: '#/components/schemas/Usuario'
+        receptor:
+          $ref: '#/components/schemas/Usuario'
 #Auth Schemas
     LoginRequest:
       type: object
@@ -3230,4 +3253,207 @@ paths:
       responses:
         "200":
           description: Reviews del usuario autenticado
+  /mensajes/conversaciones:
+    get:
+      tags:
+        - Mensajes
+      summary: Obtener conversaciones
+      description: Obtiene todas las conversaciones del usuario autenticado.
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Conversaciones obtenidas correctamente.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Mensaje'
+                  message:
+                    type: string
+                    example: Conversaciones obtenidas correctamente.
+  /mensajes/chat/{idUsuario}:
+    get:
+      tags:
+        - Mensajes
+      summary: Obtener conversación con usuario
+      description: Obtiene todos los mensajes entre el usuario autenticado y otro usuario.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: idUsuario
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Conversación obtenida correctamente.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Mensaje'
+                  message:
+                    type: string
+                    example: Conversación obtenida correctamente.
+        "404":
+          description: Usuario no encontrado.
+
+  /mensajes:
+    post:
+      tags:
+        - Mensajes
+      summary: Enviar mensaje
+      description: Envía un mensaje a otro usuario.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - id_receptor
+                - contenido
+              properties:
+                id_receptor:
+                  type: integer
+                  example: 5
+                contenido:
+                  type: string
+                  example: Hola Fer :)
+      responses:
+        "201":
+          description: Mensaje enviado correctamente.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/Mensaje'
+                  message:
+                    type: string
+                    example: Mensaje enviado correctamente.
+        "409":
+          description: Operación inválida.
+        "422":
+          description: Error de validación.
+
+  /mensajes/{id}/leido:
+    put:
+      tags:
+        - Mensajes
+      summary: Marcar mensaje como leído
+      description: Marca un mensaje como leído.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Mensaje marcado como leído.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/Mensaje'
+                  message:
+                    type: string
+                    example: Mensaje marcado como leído.
+        "403":
+          description: Acceso denegado.
+        "404":
+          description: Mensaje no encontrado.
+
+  /mensajes/no-leidos:
+    get:
+      tags:
+        - Mensajes
+      summary: Obtener mensajes no leídos
+      description: Obtiene todos los mensajes no leídos del usuario autenticado.
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Mensajes no leídos obtenidos correctamente.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Mensaje'
+                  message:
+                    type: string
+                    example: Mensajes no leídos obtenidos correctamente.
+
+  /mensajes/{id}:
+    delete:
+      tags:
+        - Mensajes
+      summary: Eliminar mensaje
+      description: Elimina un mensaje enviado o recibido por el usuario autenticado.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Mensaje eliminado correctamente.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    example: []
+                  message:
+                    type: string
+                    example: Mensaje eliminado correctamente.
+        "403":
+          description: Acceso denegado.
+        "404":
+          description: Mensaje no encontrado.
           
