@@ -17,7 +17,7 @@ class CategoriaController extends Controller
      */
     public function index()
     {
-        $categorias = Categoria::orderBy('nombre', 'asc')->get();
+        $categorias = Categoria::orderBy('id', 'desc')->get();
 
         return $this->sendResponse(
             $categorias,
@@ -32,10 +32,14 @@ class CategoriaController extends Controller
     {
         $request->validate([
             'nombre' => 'required|string|max:50|unique:categorias,nombre',
+            'icono' => 'nullable|string|max:255',
+            'color' => 'nullable|string|max:7|regex:/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/',
         ]);
 
         $categoria = Categoria::create([
             'nombre' => $request->nombre,
+            'icono' => $request->icono,
+            'color' => $request->color,
         ]);
 
         return $this->sendResponse(
@@ -85,10 +89,14 @@ class CategoriaController extends Controller
 
         $request->validate([
             'nombre' => 'required|string|max:50|unique:categorias,nombre,' . $id,
+            'icono' => 'nullable|string|max:255',
+            'color' => 'nullable|string|max:7|regex:/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/',
         ]);
 
         $categoria->update([
             'nombre' => $request->nombre,
+            'icono' => $request->icono,
+            'color' => $request->color,
         ]);
 
         return $this->sendResponse(
