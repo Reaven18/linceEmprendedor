@@ -64,9 +64,9 @@ Route::post('/register', [
 */
 //Validada
 Route::get('/vendedores', [
-        UsuarioController::class,
-        'vendedores'
-    ]);
+    UsuarioController::class,
+    'vendedores'
+]);
 
 //Validada
 Route::get('/usuarios/{id}', [
@@ -764,14 +764,14 @@ Route::middleware('auth:sanctum')->group(function () {
 
     //Validada
     //Es lo mismo que la anterior pero filtrando por vendedor
-     Route::post('/mis-ventas/filtros', [
+    Route::post('/mis-ventas/filtros', [
         VentaController::class,
         'misVentasFiltros'
     ])->middleware('role:vendedor');
 
     //Validada
     //Es lo mismo que la anterior pero filtrando por cliente
-     Route::post('/mis-compras/filtros', [
+    Route::post('/mis-compras/filtros', [
         VentaController::class,
         'misComprasFiltros'
     ])->middleware('role:cliente');
@@ -937,7 +937,7 @@ Route::middleware('auth:sanctum')->group(function () {
         'misCompras'
     ])->middleware('role:cliente');
 
-     //validada
+    //validada
     /*
     * Repuesta 200
     * {
@@ -1110,6 +1110,11 @@ Route::middleware('auth:sanctum')->group(function () {
         VentaController::class,
         'store'
     ])->middleware('role:cliente');
+
+    Route::post(
+        '/ventas/{id}/crear-preferencia',
+        [VentaController::class, 'crearPreferencia']
+    );
 
 
     //validada
@@ -1400,8 +1405,8 @@ Route::middleware('auth:sanctum')->group(function () {
         'store'
     ])->middleware('role:cliente');
 
-//validada
-/*
+    //validada
+    /*
 * Respuesta 200
 {
     "success": true,
@@ -1506,7 +1511,7 @@ Route::middleware('auth:sanctum')->group(function () {
     ])->middleware('role:cliente,admin');
 
     //validada
-     /*
+    /*
      * Respuesta 200
      {
         "success": true,
@@ -1703,7 +1708,7 @@ Route::middleware('auth:sanctum')->group(function () {
     ])->middleware('role:cliente,admin');
 
     //validada
-     /*
+    /*
      * Respuesta 200
      {
         "success": true,
@@ -1729,7 +1734,7 @@ Route::middleware('auth:sanctum')->group(function () {
     */
 
     //validada
-     /*
+    /*
      * Parametros de Body:
      * {
             "metodo": "Transferencia"

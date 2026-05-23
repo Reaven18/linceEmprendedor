@@ -105,7 +105,7 @@ class AuthController extends Controller
     public function me(Request $request)
     {
         $user = $request->user()->load('roles');
-
+        
         return $this->sendResponse(
             $user,
             'Datos del usuario autenticado.'

@@ -9,6 +9,8 @@ use App\Models\Transaccion;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use MercadoPago\Client\Preference\PreferenceClient;
+use MercadoPago\MercadoPagoConfig;
 
 /**
  * @group Ventas
@@ -27,11 +29,11 @@ class VentaController extends Controller
             'detalles.producto.imagenes',
             'transaccion.metodoPago'
         ])
-        ->whereHas('detalles.producto', function ($query) {
-            $query->where('id_vendedor', Auth::id());
-        })
-        ->orderBy('fecha', 'desc')
-        ->get();
+            ->whereHas('detalles.producto', function ($query) {
+                $query->where('id_vendedor', Auth::id());
+            })
+            ->orderBy('fecha', 'desc')
+            ->get();
 
         return $this->sendResponse(
             $ventas,
@@ -45,18 +47,15 @@ class VentaController extends Controller
             'detalles.producto.imagenes',
             'transaccion.metodoPago'
         ]);
-        if ($lugar != null)
-            {
-                $query->where('lugar', 'like', '%' . $lugar . '%');
-            }
-        if ($status != null)
-            {
-                $query->where('status', $status);
-            }
-        if ($fecha != null)
-            {
-                $query->whereDate('fecha', $fecha);
-            }
+        if ($lugar != null) {
+            $query->where('lugar', 'like', '%' . $lugar . '%');
+        }
+        if ($status != null) {
+            $query->where('status', $status);
+        }
+        if ($fecha != null) {
+            $query->whereDate('fecha', $fecha);
+        }
         return $query->get();
     }
 
@@ -66,9 +65,9 @@ class VentaController extends Controller
             'detalles.producto.vendedor',
             'transaccion.metodoPago'
         ])
-        ->where('id_cliente', Auth::id())
-        ->orderBy('fecha','desc')
-        ->get();
+            ->where('id_cliente', Auth::id())
+            ->orderBy('fecha', 'desc')
+            ->get();
 
         return $this->sendResponse(
             $ventas,
@@ -76,24 +75,21 @@ class VentaController extends Controller
         );
     }
 
-     public function misComprasFiltros($lugar, $status, $fecha)
+    public function misComprasFiltros($lugar, $status, $fecha)
     {
         $query = Venta::with([
             'detalles.producto.vendedor',
             'transaccion.metodoPago'
         ]);
-        if ($lugar != null)
-            {
-                $query->where('lugar', 'like', '%' . $lugar . '%');
-            }
-        if ($status != null)
-            {
-                $query->where('status', $status);
-            }
-        if ($fecha != null)
-            {
-                $query->whereDate('fecha', $fecha);
-            }
+        if ($lugar != null) {
+            $query->where('lugar', 'like', '%' . $lugar . '%');
+        }
+        if ($status != null) {
+            $query->where('status', $status);
+        }
+        if ($fecha != null) {
+            $query->whereDate('fecha', $fecha);
+        }
         return $query->get();
     }
 
@@ -104,8 +100,8 @@ class VentaController extends Controller
             'detalles.producto.vendedor',
             'transaccion.metodoPago'
         ])
-        ->orderBy('fecha', 'desc')
-        ->get();
+            ->orderBy('fecha', 'desc')
+            ->get();
 
         return $this->sendResponse(
             $ventas,
@@ -124,18 +120,15 @@ class VentaController extends Controller
             'detalles.producto.vendedor',
             'transaccion.metodoPago'
         ]);
-        if ($lugar != null)
-            {
-                $query->where('lugar', 'like', '%' . $lugar . '%');
-            }
-        if ($status != null)
-            {
-                $query->where('status', $status);
-            }
-        if ($fecha != null)
-            {
-                $query->whereDate('fecha', $fecha);
-            }
+        if ($lugar != null) {
+            $query->where('lugar', 'like', '%' . $lugar . '%');
+        }
+        if ($status != null) {
+            $query->where('status', $status);
+        }
+        if ($fecha != null) {
+            $query->whereDate('fecha', $fecha);
+        }
         return $query->get();
     }
 
@@ -191,13 +184,13 @@ class VentaController extends Controller
             'lugar' => 'nullable|string|max:100',
             'latitud' => 'nullable|numeric',
             'longitud' => 'nullable|numeric',
-            'tipo' => 'required|in:reservada,pagada',
+            'tipo' => 'required|in:confirmada,pendiente,pagada',
             'productos' => 'required|array|min:1',
             'productos.*.id_producto' => 'required|exists:productos,id',
             'productos.*.cantidad' => 'required|integer|min:1',
 
             // Solo requerido si paga al momento
-            'id_metodo_de_pago' => 'required_if:tipo,pagada|exists:metodo_pago,id',
+            'id_metodo_de_pago' => 'required_if:tipo,pagada,confirmada|exists:metodo_pago,id',
         ]);
 
         DB::beginTransaction();
@@ -284,7 +277,7 @@ class VentaController extends Controller
             }
 
             // Si paga al momento, crear transacción
-            if ($request->tipo === 'pagada') {
+            if ($request->tipo === 'confirmada' || $request->tipo === 'pagada') {
 
                 Transaccion::create([
                     'id_venta' => $venta->id,
@@ -297,6 +290,10 @@ class VentaController extends Controller
 
             DB::commit();
 
+            if ($request->tipo === 'confirmada' && $request->id_metodo_de_pago == 2) {
+                $this->crearPreferencia($venta->id);
+            }
+
             $venta->load([
                 'cliente',
                 'detalles.producto.vendedor',
@@ -308,7 +305,6 @@ class VentaController extends Controller
                 'Venta creada correctamente.',
                 201
             );
-
         } catch (\Exception $e) {
 
             DB::rollBack();
@@ -385,12 +381,17 @@ class VentaController extends Controller
                 'fecha' => now(),
                 'id_metodo_de_pago' => $request->id_metodo_de_pago,
             ]);
-
             // Actualizar estado
-            $venta->update([
-                'status' => 'confirmada'
-            ]);
+            if ($request->id_metodo_de_pago != 2) {
 
+                $venta->update([
+                    'status' => 'confirmada'
+                ]);
+            }
+
+            if ($request->id_metodo_de_pago == 2) {
+                $this->crearPreferencia($venta->id);
+            }
             DB::commit();
 
             $venta->load([
@@ -403,13 +404,94 @@ class VentaController extends Controller
                 $venta,
                 'Venta pagada correctamente.'
             );
-
         } catch (\Exception $e) {
 
             DB::rollBack();
 
             return $this->sendError(
                 'Error al procesar el pago.',
+                [
+                    'error' => $e->getMessage()
+                ],
+                500
+            );
+        }
+    }
+    public function crearPreferencia($id)
+    {
+        try {
+
+            MercadoPagoConfig::setAccessToken(
+                config('services.mercadopago.token')
+            );
+
+            $venta = Venta::with('detalles.producto', 'transaccion')
+                ->find($id);
+
+            if (!$venta) {
+
+                return $this->sendError(
+                    'Venta no encontrada.',
+                    ['error' => 'No existe una venta con ese ID.'],
+                    404
+                );
+            }
+
+            if (!$venta->transaccion) {
+
+                return $this->sendError(
+                    'Transacción no encontrada.',
+                    ['error' => 'La venta no tiene transacción.'],
+                    404
+                );
+            }
+
+            $transaccion = $venta->transaccion;
+
+            $client = new PreferenceClient();
+            $items = [];
+
+            foreach ($venta->detalles as $detalle) {
+
+                $items[] = [
+
+                    "title" =>
+                    $detalle->producto->nombre,
+
+                    "quantity" =>
+                    (int) $detalle->cantidad,
+
+                    "unit_price" =>
+                    (float) $detalle->precio_unitario,
+                ];
+            }
+
+            $preference = $client->create([
+                "items" => $items,
+
+                "external_reference" =>
+                (string) $transaccion->id
+
+            ]);
+
+            $transaccion->preference_id =
+                $preference->id;
+
+            $transaccion->payment_status =
+                'pending';
+
+            $transaccion->fecha_pago = now();
+
+            $transaccion->save();
+
+            return $this->sendResponse([
+                "preferenceId" =>
+                $preference->id
+            ], 'Preferencia creada correctamente.');
+        } catch (\Exception $e) {
+
+            return $this->sendError(
+                'Error al crear preferencia.',
                 [
                     'error' => $e->getMessage()
                 ],
