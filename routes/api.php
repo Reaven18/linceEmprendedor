@@ -281,6 +281,21 @@ Route::middleware('auth:sanctum')->group(function () {
     |--------------------------------------------------------------------------
     */
 
+    Route::get('/ubicacion', [
+        UsuarioController::class,
+        'ubicacion'
+    ]);
+
+    Route::put('/ubicacion/{id}', [
+        UsuarioController::class,
+        'updateUbicacion'
+    ]);
+
+    Route::get('/vendedores/ubicacion', [
+        UsuarioController::class,
+        'vendedoresUbicacion'
+    ]);
+
     //validada
     Route::get('/clientes', [
         UsuarioController::class,

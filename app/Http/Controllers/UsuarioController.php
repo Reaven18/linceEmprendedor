@@ -158,7 +158,42 @@ class UsuarioController extends Controller
         );
     }
 
-    public function actualizarUbicación(Request $request, $id)
+    public function ubicacion()
+    {
+        $usuario = User::find(Auth::id());
+
+        if (!$usuario) {
+            return $this->sendError(
+                'Usuario no encontrado.',
+                ['error' => 'No existe un usuario con ese ID.'],
+                404
+            );
+        }
+
+        return $this->sendResponse(
+            [
+                'latitud' => $usuario->latitud,
+                'longitud' => $usuario->longitud,
+            ],
+            'Ubicación obtenida con éxito.'
+        );
+    }
+
+    public function vendedoresUbicacion()
+    {
+        $vendedores = User::with('roles')
+            ->whereHas('roles', function ($query) {
+                $query->where('id', 2);
+            })
+            ->get(['id', 'nombre', 'latitud', 'longitud']);
+
+        return $this->sendResponse(
+            $vendedores,
+            'Ubicaciones de vendedores obtenidas con éxito.'
+        );
+    }
+
+    public function updateUbicacion(Request $request, $id)
     {
         $usuario = User::find($id);
 
