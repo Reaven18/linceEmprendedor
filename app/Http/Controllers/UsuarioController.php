@@ -179,6 +179,20 @@ class UsuarioController extends Controller
         );
     }
 
+    public function ubicacionUsuario()
+    {
+        $usuarios = User::with('roles')
+            ->whereHas('roles', function ($query) {
+                $query->whereIn('id', [2, 3]);
+            })
+            ->get(['id', 'nombre', 'latitud', 'longitud']);
+
+        return $this->sendResponse(
+            $usuarios,
+            'Ubicaciones de usuarios obtenidas con éxito.'
+        );
+    }
+
     public function vendedoresUbicacion()
     {
         $vendedores = User::with('roles')

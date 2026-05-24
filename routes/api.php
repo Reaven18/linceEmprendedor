@@ -286,6 +286,11 @@ Route::middleware('auth:sanctum')->group(function () {
         'ubicacion'
     ]);
 
+    Route::get('/ubicacion/{id}', [
+        UsuarioController::class,
+        'ubicacionUsuario'
+    ]);
+
     Route::put('/ubicacion/{id}', [
         UsuarioController::class,
         'updateUbicacion'
