@@ -1241,7 +1241,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/ventas/{id}/completar', [
         VentaController::class,
         'completar'
-    ])->middleware('role:admin');
+    ])->middleware('role:admin,vendedor');
 
     /*
     |--------------------------------------------------------------------------

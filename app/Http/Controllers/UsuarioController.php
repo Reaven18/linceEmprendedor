@@ -27,10 +27,10 @@ class UsuarioController extends Controller
     public function clientes()
     {
         $usuarios = User::with('roles')
-        ->whereHas('roles', function ($query) {
-            $query->where('id', 3);
-        })
-        ->get();
+            ->whereHas('roles', function ($query) {
+                $query->where('id', 3);
+            })
+            ->get();
 
         return $this->sendResponse(
             $usuarios,
@@ -40,10 +40,10 @@ class UsuarioController extends Controller
     public function vendedores()
     {
         $usuarios = User::with('roles')
-        ->whereHas('roles', function ($query) {
-            $query->where('id', 2);
-        })
-        ->get();
+            ->whereHas('roles', function ($query) {
+                $query->where('id', 2);
+            })
+            ->get();
 
         return $this->sendResponse(
             $usuarios,
@@ -232,7 +232,51 @@ class UsuarioController extends Controller
             $usuario,
             'Ubicación actualizada con éxito.'
         );
+    }
 
+    public function updateImagen(Request $request)
+    {
+        $usuario = User::find(Auth::id());
+
+        if (!$usuario) {
+
+            return $this->sendError(
+                'Usuario no encontrado.',
+                ['error' => 'No existe un usuario con ese ID.'],
+                404
+            );
+        }
+
+        $request->validate([
+            'imagen' =>
+            'required|image|mimes:jpeg,png,jpg,gif|max:2048',
+        ]);
+
+        if ($request->hasFile('imagen')) {
+
+            $imagen = $request->file('imagen');
+
+            $nombreImagen =
+                time() . '.' .
+                $imagen->getClientOriginalExtension();
+
+            $imagen->move(
+                public_path('images'),
+                $nombreImagen
+            );
+
+            $usuario->imagen = $nombreImagen;
+
+            $usuario->save();
+        }
+
+        return $this->sendResponse(
+            [
+                'imagen' =>
+                asset('images/' . $usuario->imagen)
+            ],
+            'Imagen actualizada correctamente.'
+        );
     }
 
     public function activarNegocio($id)
@@ -247,7 +291,7 @@ class UsuarioController extends Controller
             );
         }
 
-        $usuario->negocio_activo = !$usuario->negocio_activo ;
+        $usuario->negocio_activo = !$usuario->negocio_activo;
         $usuario->save();
 
         return $this->sendResponse(
@@ -267,7 +311,7 @@ class UsuarioController extends Controller
             );
         }
 
-        $usuario->baneado = !$usuario->baneado ;
+        $usuario->baneado = !$usuario->baneado;
         $usuario->save();
 
         return $this->sendResponse(
@@ -306,7 +350,7 @@ class UsuarioController extends Controller
                 'Usuario no encontrado.',
                 ['error' => 'No existe un usuario con ese ID.'],
                 404
-             );
+            );
         }
 
         $usuario->delete();
@@ -314,7 +358,6 @@ class UsuarioController extends Controller
         return $this->sendResponse(
             null,
             'Cuenta eliminada con éxito.'
-         );
+        );
     }
-
 }

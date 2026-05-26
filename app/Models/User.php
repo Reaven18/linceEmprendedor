@@ -24,7 +24,8 @@ class User extends Authenticatable
         'latitud',
         'longitud',
         'negocio_activo',
-        'baneado'
+        'baneado',
+        'url'        
     ];
 
     protected $hidden = [
