@@ -6,6 +6,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 
 
 
@@ -239,7 +240,6 @@ class UsuarioController extends Controller
         $usuario = User::find(Auth::id());
 
         if (!$usuario) {
-
             return $this->sendError(
                 'Usuario no encontrado.',
                 ['error' => 'No existe un usuario con ese ID.'],
@@ -248,36 +248,72 @@ class UsuarioController extends Controller
         }
 
         $request->validate([
-            'imagen' =>
-            'required|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'imagen' => 'required|image|mimes:jpg,jpeg,png,gif|max:2048',
         ]);
 
-        if ($request->hasFile('imagen')) {
+        try {
 
-            $imagen = $request->file('imagen');
+            if (!$request->hasFile('imagen')) {
+                return $this->sendError(
+                    'Archivo no enviado.',
+                    ['error' => 'No se recibió ninguna imagen.'],
+                    400
+                );
+            }
 
-            $nombreImagen =
-                time() . '.' .
-                $imagen->getClientOriginalExtension();
+            $archivo = $request->file('imagen');
 
-            $imagen->move(
-                public_path('images'),
-                $nombreImagen
+            // nombre único
+            $nombre = uniqid('perfil_') . '.' .
+                $archivo->getClientOriginalExtension();
+
+            // subir a Supabase Storage (S3)
+            $path = Storage::disk('usuarios')->putFileAs(
+                'perfil',
+                $archivo,
+                $nombre
             );
 
-            $usuario->imagen = $nombreImagen;
+            // construir URL manual (Supabase S3 compatible)
+            $url = env('SUPABASE_URL')
+                . '/storage/v1/object/public/usuarios/'
+                . $path;
 
+            // opcional: borrar imagen anterior
+            if ($usuario->url) {
+                $oldPath = str_replace(
+                    env('SUPABASE_URL')
+                        . '/storage/v1/object/public/usuarios/',
+                    '',
+                    $usuario->url
+                );
+
+                Storage::disk('usuarios')->delete($oldPath);
+            }
+
+            // guardar en BD
+            $usuario->url = $url;
             $usuario->save();
-        }
 
-        return $this->sendResponse(
-            [
-                'imagen' =>
-                asset('images/' . $usuario->imagen)
-            ],
-            'Imagen actualizada correctamente.'
-        );
+            return $this->sendResponse(
+                [
+                    'url' => $usuario->url
+                ],
+                'Imagen actualizada correctamente.'
+            );
+        } catch (\Exception $e) {
+
+            return $this->sendError(
+                'Error al subir imagen.',
+                [
+                    'error' => $e->getMessage()
+                ],
+                500
+            );
+        }
     }
+
+    
 
     public function activarNegocio($id)
     {

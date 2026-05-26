@@ -301,6 +301,12 @@ Route::middleware('auth:sanctum')->group(function () {
         'vendedoresUbicacion'
     ]);
 
+    Route::put('/usuarios/upload-imagen', [
+        UsuarioController::class,
+        'updateImagen'
+    ]);
+    
+
     //validada
     Route::get('/clientes', [
         UsuarioController::class,
