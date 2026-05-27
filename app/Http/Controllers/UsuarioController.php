@@ -255,9 +255,12 @@ class UsuarioController extends Controller
                     404
                 );
             }
+            $parts = explode('s3/', $usuario->url);
+            $relativePath = end($parts);
 
             return $this->sendResponse(
-                ['url' => $usuario->url],
+                ['url' => $usuario->url,
+                'relative_path' => $relativePath],
                 'Imagen obtenida con éxito.'
             );
 
