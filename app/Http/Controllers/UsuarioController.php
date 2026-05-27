@@ -255,7 +255,7 @@ class UsuarioController extends Controller
                     404
                 );
             }
-            $parts = explode('s3/', $usuario->url);
+            $parts = explode('perfil/', $usuario->url);
             $relativePath = end($parts);
 
             $image = Storage::disk('usuarios')->get($relativePath);
