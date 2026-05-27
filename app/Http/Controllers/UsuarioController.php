@@ -256,20 +256,13 @@ class UsuarioController extends Controller
                 );
             }
             $parts = explode('/public/usuarios/', $usuario->url);
-            $path = end($parts);
+            $aux = $parts[0].'\n'. $parts[1];
 
-            if(!Storage::disk('usuarios')->exists($path))
-                {
-                    return $this->sendError(
-                        'Imagen no encontrada.',
-                        ['error' => 'La imagen de perfil no existe en el almacenamiento.'],
-                        404
-                    );
-                }
-            $file = Storage::disk('usuarios')->get($path);
-            $type = Storage::disk('usuarios')->mimeType($path);
 
-             return response($file, 200)->header('Content-Type', $type);
+             return response(200)->json([
+                'url' => $usuario->url,
+                'path' => $aux
+            ]);
 
         }
         catch (\Exception $e)
