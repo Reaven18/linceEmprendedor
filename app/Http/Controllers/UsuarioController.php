@@ -237,7 +237,7 @@ class UsuarioController extends Controller
 
     public function updateImagen(Request $request)
     {
-        $usuario = User::find(Auth::id());
+        $usuario = Auth::user();
 
         if (!$usuario) {
             return $this->sendError(
@@ -263,6 +263,15 @@ class UsuarioController extends Controller
 
             $archivo = $request->file('imagen');
 
+            if(!$usuario->url)
+                {
+                    $parts = explode('public/usuarios/', $usuario->url);
+                    $relativePath = end($parts);
+                    if(Storage::disk('usuarios')->exists($relativePath)) {
+                        Storage::disk('usuarios')->delete($relativePath);
+                    }
+                }
+
             // nombre único
             $nombre = uniqid('perfil_') . '.' .
                 $archivo->getClientOriginalExtension();
@@ -275,25 +284,10 @@ class UsuarioController extends Controller
             );
 
             // construir URL manual (Supabase S3 compatible)
-            $url = env('SUPABASE_URL')
-                . '/storage/v1/object/public/usuarios/'
-                . $path;
+            $url = Storage::disk('usuarios')->url($path);
 
-            // opcional: borrar imagen anterior
-            if ($usuario->url) {
-                $oldPath = str_replace(
-                    env('SUPABASE_URL')
-                        . '/storage/v1/object/public/usuarios/',
-                    '',
-                    $usuario->url
-                );
 
-                Storage::disk('usuarios')->delete($oldPath);
-            }
-
-            // guardar en BD
-            $usuario->url = $url;
-            $usuario->save();
+            $usuario->update(['url' => $url]);
 
             return $this->sendResponse(
                 [
