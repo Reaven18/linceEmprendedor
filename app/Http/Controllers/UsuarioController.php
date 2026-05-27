@@ -256,13 +256,17 @@ class UsuarioController extends Controller
                 );
             }
             $parts = explode('/public/usuarios/', $usuario->url);
-            
 
 
-             return response(200)->json([
-                'url' => $usuario->url,
-                'path' => $parts
-            ]);
+
+            return $this->sendResponse(
+                [
+                    'url' => $usuario->url,
+                    'relative_path' => end($parts),
+                    'path' => $parts
+                ],
+                'Imagen obtenida con éxito.'
+            );
 
         }
         catch (\Exception $e)
