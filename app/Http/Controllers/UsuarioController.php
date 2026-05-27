@@ -255,7 +255,7 @@ class UsuarioController extends Controller
                     404
                 );
             }
-            $parts = explode('/public/usuarios/', $usuario->url);
+            $parts = explode('s3/', $usuario->url);
 
 
 
