@@ -235,6 +235,55 @@ class UsuarioController extends Controller
         );
     }
 
+    public function getImagen()
+    {
+        $usuario = Auth::user();
+
+        if(!$usuario) {
+            return $this->sendError(
+                'Usuario no encontrado.',
+                ['error' => 'No existe un usuario con ese ID.'],
+                404
+            );
+        }
+        try
+        {
+            if (!$usuario->url) {
+                return $this->sendError(
+                    'Imagen no encontrada.',
+                    ['error' => 'El usuario no tiene una imagen de perfil.'],
+                    404
+                );
+            }
+            $parts = explode('/public/usuarios/', $usuario->url);
+            $path = end($parts);
+
+            if(!Storage::disk('usuarios')->exists($path))
+                {
+                    return $this->sendError(
+                        'Imagen no encontrada.',
+                        ['error' => 'La imagen de perfil no existe en el almacenamiento.'],
+                        404
+                    );
+                }
+            $file = Storage::disk('usuarios')->get($path);
+            $type = Storage::disk('usuarios')->mimeType($path);
+
+             return response($file, 200)->header('Content-Type', $type);
+
+        }
+        catch (\Exception $e)
+        {
+            return $this->sendError(
+                'Error al obtener imagen.',
+                [
+                    'error' => $e->getMessage()
+                ],
+                500
+            );
+        }
+    }
+
     public function updateImagen(Request $request)
     {
         $usuario = Auth::user();
