@@ -301,7 +301,7 @@ Route::middleware('auth:sanctum')->group(function () {
         'vendedoresUbicacion'
     ]);
 
-    Route::get('/imagen',[
+    Route::get('/imagen/usuario',[
         UsuarioController::class,
         'getImagen'
     ]);
@@ -309,6 +309,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/usuarios/upload-imagen', [
         UsuarioController::class,
         'updateImagen'
+    ]);
+
+    Route::delete('/usuarios/delete-imagen', [
+        UsuarioController::class,
+        'deleteImagen'
     ]);
 
 

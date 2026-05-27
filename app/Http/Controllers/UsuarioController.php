@@ -255,16 +255,9 @@ class UsuarioController extends Controller
                     404
                 );
             }
-            $parts = explode('s3/', $usuario->url);
-
-
 
             return $this->sendResponse(
-                [
-                    'url' => $usuario->url,
-                    'relative_path' => end($parts),
-                    'path' => $parts
-                ],
+                ['url' => $usuario->url],
                 'Imagen obtenida con éxito.'
             );
 
@@ -273,6 +266,52 @@ class UsuarioController extends Controller
         {
             return $this->sendError(
                 'Error al obtener imagen.',
+                [
+                    'error' => $e->getMessage()
+                ],
+                500
+            );
+        }
+    }
+
+    public function deleteImagen()
+    {
+        $usuario = Auth::user();
+
+        if (!$usuario) {
+            return $this->sendError(
+                'Usuario no encontrado.',
+                ['error' => 'No existe un usuario con ese ID.'],
+                404
+            );
+        }
+
+        if (!$usuario->url) {
+            return $this->sendError(
+                'Imagen no encontrada.',
+                ['error' => 'El usuario no tiene una imagen de perfil.'],
+                404
+            );
+        }
+
+        try {
+            $parts = explode('s3/', $usuario->url);
+            $relativePath = end($parts);
+
+            if (Storage::disk('usuarios')->exists($relativePath)) {
+                Storage::disk('usuarios')->delete($relativePath);
+            }
+
+            $usuario->url = null;
+            $usuario->save();
+
+            return $this->sendResponse(
+                null,
+                'Imagen eliminada con éxito.'
+            );
+        } catch (\Exception $e) {
+            return $this->sendError(
+                'Error al eliminar imagen.',
                 [
                     'error' => $e->getMessage()
                 ],
@@ -311,7 +350,7 @@ class UsuarioController extends Controller
 
             if(!$usuario->url)
                 {
-                    $parts = explode('public/usuarios/', $usuario->url);
+                    $parts = explode('s3/', $usuario->url);
                     $relativePath = end($parts);
                     if(Storage::disk('usuarios')->exists($relativePath)) {
                         Storage::disk('usuarios')->delete($relativePath);
