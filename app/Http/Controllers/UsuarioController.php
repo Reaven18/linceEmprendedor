@@ -256,12 +256,12 @@ class UsuarioController extends Controller
                 );
             }
             $parts = explode('/public/usuarios/', $usuario->url);
-            $aux = $parts[0].'\n'. $parts[1];
+            
 
 
              return response(200)->json([
                 'url' => $usuario->url,
-                'path' => $aux
+                'path' => $parts
             ]);
 
         }
