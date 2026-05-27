@@ -237,12 +237,80 @@ class UsuarioController extends Controller
 
     public function updateImagen(Request $request)
     {
-        dd([
-            'all' => $request->all(),
-            'file' => $request->file('imagen'),
-            'hasFile' => $request->hasFile('imagen'),
-            'headers' => $request->header()
+        $usuario = User::find(Auth::id());
+
+        if (!$usuario) {
+            return $this->sendError(
+                'Usuario no encontrado.',
+                ['error' => 'No existe un usuario con ese ID.'],
+                404
+            );
+        }
+
+        $request->validate([
+            'imagen' => 'required|image|mimes:jpg,jpeg,png,gif|max:2048',
         ]);
+
+        try {
+
+            if (!$request->hasFile('imagen')) {
+                return $this->sendError(
+                    'Archivo no enviado.',
+                    ['error' => 'No se recibió ninguna imagen.'],
+                    400
+                );
+            }
+
+            $archivo = $request->file('imagen');
+
+            // nombre único
+            $nombre = uniqid('perfil_') . '.' .
+                $archivo->getClientOriginalExtension();
+
+            // subir a Supabase Storage (S3)
+            $path = Storage::disk('usuarios')->putFileAs(
+                'perfil',
+                $archivo,
+                $nombre
+            );
+
+            // construir URL manual (Supabase S3 compatible)
+            $url = env('SUPABASE_URL')
+                . '/storage/v1/object/public/usuarios/'
+                . $path;
+
+            // opcional: borrar imagen anterior
+            if ($usuario->url) {
+                $oldPath = str_replace(
+                    env('SUPABASE_URL')
+                        . '/storage/v1/object/public/usuarios/',
+                    '',
+                    $usuario->url
+                );
+
+                Storage::disk('usuarios')->delete($oldPath);
+            }
+
+            // guardar en BD
+            $usuario->url = $url;
+            $usuario->save();
+
+            return $this->sendResponse(
+                [
+                    'url' => $usuario->url
+                ],
+                'Imagen actualizada correctamente.'
+            );
+        } catch (\Exception $e) {
+
+            return $this->sendError(
+                'Error al subir imagen.',
+                [
+                    'error' => $e->getMessage()
+                ],
+                500
+            );
+        }
     }
 
 
