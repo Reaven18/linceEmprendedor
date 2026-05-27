@@ -258,9 +258,14 @@ class UsuarioController extends Controller
             $parts = explode('s3/', $usuario->url);
             $relativePath = end($parts);
 
+            $image = Storage::disk('usuarios')->get($relativePath);
+            $mimeType = Storage::disk('usuarios')->mimeType($relativePath);
+
             return $this->sendResponse(
                 ['url' => $usuario->url,
-                'relative_path' => $relativePath],
+                'relative_path' => $relativePath,
+                'image' => base64_encode($image),
+                'mimetype' => $mimeType],
                 'Imagen obtenida con éxito.'
             );
 
@@ -351,7 +356,7 @@ class UsuarioController extends Controller
 
             $archivo = $request->file('imagen');
 
-            if(!$usuario->url)
+            if($usuario->url)
                 {
                     $parts = explode('s3/', $usuario->url);
                     $relativePath = end($parts);
