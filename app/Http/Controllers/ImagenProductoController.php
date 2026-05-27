@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\ImagenProducto;
 use App\Models\Producto;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 /**
  * @group Imágenes de Productos
@@ -44,10 +45,12 @@ class ImagenProductoController extends Controller
      */
     public function store(Request $request)
     {
+
         $request->validate([
             'id_producto' => 'required|exists:productos,id',
-            'url_imagen' => 'required|string|max:255',
+            'url_imagen' => 'sometimes|nullable|string|max:255',
             'orden' => 'required|integer|min:1|max:3',
+            'imagen' => 'sometimes|image|mimes:jpg,jpeg,png,gif|max:2048',
         ]);
 
         // Verificar límite de imágenes
@@ -64,14 +67,13 @@ class ImagenProductoController extends Controller
                 409
             );
         }
-
         // Verificar orden duplicado
         $ordenExistente = ImagenProducto::where(
             'id_producto',
             $request->id_producto
         )
-        ->where('orden', $request->orden)
-        ->exists();
+            ->where('orden', $request->orden)
+            ->exists();
 
         if ($ordenExistente) {
 
@@ -81,10 +83,35 @@ class ImagenProductoController extends Controller
                 409
             );
         }
+        $url = null;
+
+        if ($request->hasFile('imagen'))
+        {
+            $archivo = $request->file('imagen');
+            $nombre = uniqid('producto_') . '.' . $archivo->getClientOriginalExtension();
+            $path = Storage::disk('productos')->putFileAs(
+                'imagenes',
+                $archivo,
+                $nombre
+            );
+             // construir URL manual (Supabase S3 compatible)
+             $url = env('SUPABASE_URL')
+            . '/storage/v1/object/public/productos/'
+            . $path;
+        }
+        elseif($request->has('url_imagen'))
+        {
+            $url = $request->url_imagen;
+        }
+
+        if(!$url)
+        {
+            return $this->sendError('Datos faltantes.', ['error' => 'Se debe asignar al menos una URL o una imagen'], 400);
+        }
 
         $imagen = ImagenProducto::create([
             'id_producto' => $request->id_producto,
-            'url_imagen' => $request->url_imagen,
+            'url_imagen' => $url,
             'orden' => $request->orden,
         ]);
 
@@ -136,6 +163,7 @@ class ImagenProductoController extends Controller
         $request->validate([
             'url_imagen' => 'sometimes|string|max:255',
             'orden' => 'sometimes|integer|min:1|max:3',
+            'imagen' => 'sometimes|image|mimes:jpg,jpeg,png,gif|max:2048'
         ]);
 
         // Verificar orden duplicado
@@ -145,9 +173,9 @@ class ImagenProductoController extends Controller
                 'id_producto',
                 $imagen->id_producto
             )
-            ->where('orden', $request->orden)
-            ->where('id', '!=', $id)
-            ->exists();
+                ->where('orden', $request->orden)
+                ->where('id', '!=', $id)
+                ->exists();
 
             if ($ordenExistente) {
 
@@ -159,8 +187,42 @@ class ImagenProductoController extends Controller
             }
         }
 
+         $url = null;
+
+        if ($request->hasFile('imagen'))
+        {
+            if($imagen->url_imagen)
+                {
+                    
+                    $parts = explode('productos/', $imagen->url_imagen);
+                    $relativePath = end($parts);
+                    if(Storage::disk('productos')->exists($relativePath)) {
+                        Storage::disk('productos')->delete($relativePath);
+                    }
+                }
+            $archivo = $request->file('imagen');
+            $nombre = uniqid('producto_') . '.' . $archivo->getClientOriginalExtension();
+            $path = Storage::disk('productos')->putFileAs(
+                'imagenes',
+                $archivo,
+                $nombre
+            );
+             // construir URL manual (Supabase S3 compatible)
+             $url = env('SUPABASE_URL')
+            . '/storage/v1/object/public/productos/'
+            . $path;
+        }
+        elseif($request->has('url_imagen'))
+        {
+            $url = $request->url_imagen;
+        }
+
+        if($url)
+            {
+                $imagen->update(['url_imagen' => $url]);
+            }
+
         $imagen->update($request->only([
-            'url_imagen',
             'orden'
         ]));
 

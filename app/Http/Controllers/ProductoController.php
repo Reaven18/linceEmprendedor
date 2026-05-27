@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Producto;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 
 /**
  * @group Productos
@@ -24,8 +25,8 @@ class ProductoController extends Controller
             'imagenes',
             'reviews'
         ])
-        ->orderBy('created_at', 'desc')
-        ->get();
+            ->orderBy('created_at', 'desc')
+            ->get();
 
         return $this->sendResponse(
             $productos,
@@ -96,6 +97,8 @@ class ProductoController extends Controller
             'categorias.*' => 'exists:categorias,id',
             'imagenes' => 'nullable|array',
             'imagenes.*' => 'url',
+            'fotos' => 'nullable|array|max:3',
+            'fotos.*' => 'image|mimes:jpg,jpeg,png|max:2048'
         ]);
 
         $producto = Producto::create([
@@ -112,16 +115,29 @@ class ProductoController extends Controller
         if ($request->has('categorias')) {
             $producto->categorias()->attach($request->categorias);
         }
-        if ($request->has('imagenes'))
-            {
-                foreach ($request->imagenes as $index => $url) {
-                    $producto->imagenes()->create([
-                        'id_producto' => $producto->id,
-                        'url_imagen' => $url,
-                        'orden' => $index + 1
-                    ]);
-                }
+        if ($request->has('imagenes')) {
+            foreach ($request->imagenes as $index => $url) {
+                $producto->imagenes()->create([
+                    'id_producto' => $producto->id,
+                    'url_imagen' => $url,
+                    'orden' => $index + 1
+                ]);
             }
+        } elseif ($request->has('fotos')) {
+            foreach ($request->file('fotos') as $index => $foto) {
+                $nombre = uniqid('prod_') . '_' . $index . '.' . $foto->getClientOriginalExtension();
+                $path = Storage::disk('productos')->putFileAs('imagenes', $foto, $nombre);
+
+                $url = env('SUPABASE_URL') . '/storage/v1/object/public/productos/' . $path;
+
+                $producto->imagenes()->create([
+                    'url_imagen' => $url,
+                    'orden' => $index + 1
+                ]);
+            }
+        }
+
+
         $producto->load([
             'vendedor',
             'categorias',
@@ -175,6 +191,8 @@ class ProductoController extends Controller
             'categorias.*' => 'exists:categorias,id',
             'imagenes' => 'sometimes|array',
             'imagenes.*' => 'url',
+            'fotos' => 'sometimes|array|max:3',
+            'fotos.*' => 'image|mimes:jpg,jpeg,png|max:2048'
         ]);
 
         $producto->update($request->only([
@@ -192,14 +210,34 @@ class ProductoController extends Controller
         }
 
         // Actualizar imágenes
-        if ($request->has('imagenes')) {
+        // --- PROCESAR IMÁGENES (Solo si viene alguna de las dos) ---
+        if ($request->has('imagenes') || $request->hasFile('fotos')) {
+
+            // 1. LIMPIEZA: Borrar archivos viejos de Supabase
+            foreach ($producto->imagenes as $imgVieja) {
+                $parts = explode('/productos/', $imgVieja->url_imagen);
+                $path = end($parts);
+                Storage::disk('productos')->delete($path);
+            }
+
+            // 2. Borrar registros viejos en BD
             $producto->imagenes()->delete();
-            foreach ($request->imagenes as $index => $url) {
-                $producto->imagenes()->create([
-                    'id_producto' => $producto->id,
-                    'url_imagen' => $url,
-                    'orden' => $index + 1
-                ]);
+
+            // 3. Prioridad: Si hay archivos nuevos (fotos)
+            if ($request->hasFile('fotos')) {
+                foreach ($request->file('fotos') as $index => $foto) {
+                    $nombre = uniqid('prod_') . '_' . $index . '.' . $foto->getClientOriginalExtension();
+                    $path = Storage::disk('productos')->putFileAs('imagenes', $foto, $nombre);
+                    $url = env('SUPABASE_URL') . '/storage/v1/object/public/productos/' . $path;
+
+                    $producto->imagenes()->create(['url_imagen' => $url, 'orden' => $index + 1]);
+                }
+            }
+            // 4. Si no hay archivos, pero hay URLs
+            elseif ($request->has('imagenes')) {
+                foreach ($request->imagenes as $index => $url) {
+                    $producto->imagenes()->create(['url_imagen' => $url, 'orden' => $index + 1]);
+                }
             }
         }
 
@@ -243,6 +281,10 @@ class ProductoController extends Controller
                 403
             );
         }
+        foreach ($producto->imagenes as $img) {
+            $parts = explode('/productos/', $img->url_imagen);
+            Storage::disk('productos')->delete(end($parts));
+        }
 
         $producto->delete();
 
@@ -262,9 +304,9 @@ class ProductoController extends Controller
             'imagenes',
             'reviews'
         ])
-        ->where('id_vendedor', Auth::id())
-        ->orderBy('created_at', 'desc')
-        ->get();
+            ->where('id_vendedor', Auth::id())
+            ->orderBy('created_at', 'desc')
+            ->get();
 
         return $this->sendResponse(
             $productos,
