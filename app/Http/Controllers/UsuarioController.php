@@ -255,17 +255,9 @@ class UsuarioController extends Controller
                     404
                 );
             }
-            $parts = explode('usuarios/', $usuario->url);
-            $relativePath = end($parts);
-
-            $image = Storage::disk('usuarios')->get($relativePath);
-            $mimeType = Storage::disk('usuarios')->mimeType($relativePath);
 
             return $this->sendResponse(
-                ['url' => $usuario->url,
-                'relative_path' => $relativePath,
-                'image' => base64_encode($image),
-                'mimetype' => $mimeType],
+                ['url' => $usuario->url],
                 'Imagen obtenida con éxito.'
             );
 
@@ -303,7 +295,7 @@ class UsuarioController extends Controller
         }
 
         try {
-            $parts = explode('s3/', $usuario->url);
+            $parts = explode('usuarios/', $usuario->url);
             $relativePath = end($parts);
 
             if (Storage::disk('usuarios')->exists($relativePath)) {
@@ -358,7 +350,7 @@ class UsuarioController extends Controller
 
             if($usuario->url)
                 {
-                    $parts = explode('s3/', $usuario->url);
+                    $parts = explode('usuarios/', $usuario->url);
                     $relativePath = end($parts);
                     if(Storage::disk('usuarios')->exists($relativePath)) {
                         Storage::disk('usuarios')->delete($relativePath);
