@@ -369,7 +369,9 @@ class UsuarioController extends Controller
             );
 
             // construir URL manual (Supabase S3 compatible)
-            $url = Storage::disk('usuarios')->url($path);
+             $url = env('SUPABASE_URL')
+            . '/storage/v1/object/public/usuarios/'
+            . $path;
 
 
             $usuario->update(['url' => $url]);
