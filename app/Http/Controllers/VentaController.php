@@ -607,35 +607,70 @@ class VentaController extends Controller
     }
 
     private function notificarVendedor($ventaId)
+
     {
+
         // 1. Obtener la venta con el vendedor
+
         $venta = Venta::with('detalles.producto')->find($ventaId);
 
+
+
         // Suponiendo que todos los productos de la venta son del mismo vendedor
+
         $vendedorId = $venta->detalles->first()->producto->id_vendedor;
+
         // 1. Cargar las credenciales de Google
-        $path = storage_path('app/react-2026-itc-firebase-adminsdk-fbsvc-a3e3752bf3.json');
+
+        $jsonContent = env('FIREBASE_JSON');
+
+        if (!$jsonContent) {
+
+            return;
+        }
+
         $client = new GoogleClient();
-        $client->setAuthConfig($path);
+
+        $client->setAuthConfig(json_decode($jsonContent, true));
+
         $client->addScope('https://www.googleapis.com/auth/firebase.messaging');
+
         $client->refreshTokenWithAssertion();
+
         $token = $client->getAccessToken()['access_token'];
 
+
+
         // 2. Construir el mensaje (Formato HTTP v1)
+
         $projectId = "react-2026-itc"; // Lo sacas del JSON o de la consola
+
         $url = "https://fcm.googleapis.com/v1/projects/{$projectId}/messages:send";
 
+
+
         Http::withToken($token)->post($url, [
+
             "message" => [
+
                 "topic" => "vendedor_" . $vendedorId,
+
                 "notification" => [
+
                     "title" => "¡Nueva Venta Lince!",
+
                     "body" => "Has recibido un nuevo pedido de " . Auth::user()->name
+
                 ],
+
                 "data" => [
+
                     "id_venta" => (string)$ventaId
+
                 ]
+
             ]
+
         ]);
     }
 }
