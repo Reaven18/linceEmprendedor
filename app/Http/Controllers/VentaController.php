@@ -181,6 +181,7 @@ class VentaController extends Controller
      */
     public function store(Request $request)
     {
+        $notificacioBandera = false;
         $request->validate([
 
             'lugar' => 'nullable|string|max:100',
@@ -280,7 +281,7 @@ class VentaController extends Controller
 
             // Si paga al momento, crear transacción
             if ($request->tipo === 'confirmada' || $request->tipo === 'pagada') {
-                $this->notificarVendedor($venta->id);
+                $notificacioBandera = $this->notificarVendedor($venta->id);
                 Transaccion::create([
                     'id_venta' => $venta->id,
                     'consecutivo' => 1,
@@ -304,7 +305,7 @@ class VentaController extends Controller
 
             return $this->sendResponse(
                 $venta,
-                'Venta creada correctamente.',
+                'Venta creada correctamente.' . ($notificacioBandera ? ' Se notificó al vendedor.' : 'No se pudo notificar al vendedor o no se ha confirmado la venta.'),
                 201
             );
         } catch (\Exception $e) {
@@ -326,6 +327,7 @@ class VentaController extends Controller
      */
     public function pagar(Request $request, $id)
     {
+        $notificacionBandera = false;
         $venta = Venta::with('detalles')->find($id);
 
         if (!$venta) {
@@ -384,8 +386,9 @@ class VentaController extends Controller
                 'id_metodo_de_pago' => $request->id_metodo_de_pago,
             ]);
             // Actualizar estado
-            if ($request->id_metodo_de_pago != 2) {
-                $this->notificarVendedor($venta->id);
+            if ($request->id_metodo_de_pago != 2)
+            {
+                $notificacionBandera = $this->notificarVendedor($venta->id);
                 $venta->update([
                     'status' => 'confirmada'
                 ]);
@@ -404,7 +407,7 @@ class VentaController extends Controller
 
             return $this->sendResponse(
                 $venta,
-                'Venta pagada correctamente.'
+                'Venta pagada correctamente.' . ($notificacionBandera ? ' Se notificó al vendedor.' : 'No se pudo notificar al vendedor o no se ha confirmado la venta.')
             );
         } catch (\Exception $e) {
 
@@ -609,68 +612,35 @@ class VentaController extends Controller
     private function notificarVendedor($ventaId)
 
     {
-
-        // 1. Obtener la venta con el vendedor
-
         $venta = Venta::with('detalles.producto')->find($ventaId);
-
-
-
-        // Suponiendo que todos los productos de la venta son del mismo vendedor
-
         $vendedorId = $venta->detalles->first()->producto->id_vendedor;
-
-        // 1. Cargar las credenciales de Google
-
         $jsonContent = env('FIREBASE_JSON');
 
         if (!$jsonContent) {
-
-            return;
+            return false;
         }
-
         $client = new GoogleClient();
-
         $client->setAuthConfig(json_decode($jsonContent, true));
-
         $client->addScope('https://www.googleapis.com/auth/firebase.messaging');
-
         $client->refreshTokenWithAssertion();
-
         $token = $client->getAccessToken()['access_token'];
 
-
-
         // 2. Construir el mensaje (Formato HTTP v1)
-
         $projectId = "react-2026-itc"; // Lo sacas del JSON o de la consola
-
         $url = "https://fcm.googleapis.com/v1/projects/{$projectId}/messages:send";
 
-
-
         Http::withToken($token)->post($url, [
-
             "message" => [
-
                 "topic" => "vendedor_" . $vendedorId,
-
                 "notification" => [
-
                     "title" => "¡Nueva Venta Lince!",
-
                     "body" => "Has recibido un nuevo pedido de " . Auth::user()->name
-
                 ],
-
                 "data" => [
-
                     "id_venta" => (string)$ventaId
-
                 ]
-
             ]
-
         ]);
+        return true;
     }
 }
