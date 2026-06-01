@@ -568,7 +568,10 @@ class VentaController extends Controller
      */
     public function completar($id)
     {
-        $venta = Venta::find($id);
+
+      $venta = Venta::with([
+            'cliente',
+        ])->find($id);
 
         if (!$venta) {
 
@@ -603,6 +606,7 @@ class VentaController extends Controller
             'status' => 'completada'
         ]);
 
+        $this->notificarCliente($venta->cliente->id, $venta->id);
         return $this->sendResponse(
             $venta,
             'Venta completada correctamente.'
@@ -610,9 +614,8 @@ class VentaController extends Controller
     }
 
     private function notificarVendedor($ventaId)
-
     {
-        $venta = Venta::with('detalles.producto')->find($ventaId);
+        $venta = Venta::with(['cliente','detalles.producto'])->find($ventaId);
         $vendedorId = $venta->detalles->first()->producto->id_vendedor;
         $jsonContent = env('FIREBASE_JSON');
 
@@ -634,7 +637,7 @@ class VentaController extends Controller
                 "topic" => "vendedor_" . $vendedorId,
                 "notification" => [
                     "title" => "¡Nueva Venta Lince!",
-                    "body" => "Has recibido un nuevo pedido de " . Auth::user()->name
+                    "body" => "Has recibido un nuevo pedido de " . $venta->cliente->nombre . ". Revisa los detalles en la app."
                 ],
                 "data" => [
                     "id_venta" => (string)$ventaId
@@ -643,4 +646,38 @@ class VentaController extends Controller
         ]);
         return true;
     }
+
+    private function notificarCliente($idCliente, $ventaId)
+    {
+        $jsonContent = env('FIREBASE_JSON');
+
+        if (!$jsonContent) {
+            return false;
+        }
+        $client = new GoogleClient();
+        $client->setAuthConfig(json_decode($jsonContent, true));
+        $client->addScope('https://www.googleapis.com/auth/firebase.messaging');
+        $client->refreshTokenWithAssertion();
+        $token = $client->getAccessToken()['access_token'];
+
+        // 2. Construir el mensaje (Formato HTTP v1)
+        $projectId = "react-2026-itc"; // Lo sacas del JSON o de la consola
+        $url = "https://fcm.googleapis.com/v1/projects/{$projectId}/messages:send";
+
+        Http::withToken($token)->post($url, [
+            "message" => [
+                "topic" => "vendedor_" . $idCliente,
+                "notification" => [
+                    "title" => "Compra completada",
+                    "body" => "Se ha completado tu compra, gracias por tu preferencia."
+                ],
+                "data" => [
+                    "id_venta" => (string)$ventaId
+                ]
+            ]
+        ]);
+        return true;
+    }
+
+
 }
